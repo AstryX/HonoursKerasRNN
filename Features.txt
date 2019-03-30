@@ -1,0 +1,22 @@
+HDL chol
+>60 is ideal
+<40 is low
+
+LDL chol
+>160 is high
+130-159 is not good
+<100 is ideal
+
+trigs
+<150 is ideal
+150-199 is not good
+>200 is bad!
+
+hba1c(a1c %)
+>6.5% diabetes
+<6% normal
+
+upper blood pressure
+100-120 is ideal
+< 90 is low
+> 130 is bad(high)
