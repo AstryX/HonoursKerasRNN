@@ -18,6 +18,7 @@ import statistics
 #RNN params 
 epochCount = 100
 batchSize = 128
+hiddenUnitCount = 32
 
 
 hdlconst = 8
@@ -98,20 +99,26 @@ def getExpUBP(i, reverse, offsetcoefficient):
 		return expmajoritysteepness*pow(1.2, (i+1)) + 95 - (majorityelementrange*offsetcoefficient)
 	
 
-def trainRNNClassifier(X_set, y_set, foldCount):
+def trainRNNClassifier(X_train,y_train):
+
+	# create the model
+	model = Sequential()
+	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(20,5), return_sequences=True))
+	model.add(CuDNNLSTM(hiddenUnitCount, return_sequences=True))
+	model.add(Flatten())
+	model.add(Dense(1, activation='sigmoid'))
+	#model.add(TimeDistributed(Dense(1, activation='sigmoid')))
+	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+	
+	model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=0, shuffle=False)
+	
+	return model
+	
+def evaluateRNNClassifier(X_set, y_set, foldCount):
 	accarray = []
 	lossarray = []
 
 	for fold in range(foldCount):
-		# create the model
-		model = Sequential()
-		model.add(CuDNNLSTM(32, batch_input_shape=(600,20,5), return_sequences=True, stateful=True))
-		#model.add(CuDNNLSTM(32, return_sequences=True, stateful=True))
-		model.add(Flatten())
-		model.add(Dense(1, activation='sigmoid'))
-		#model.add(TimeDistributed(Dense(1, activation='sigmoid')))
-		model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-		
 		rng_state = np.random.get_state()
 		np.random.shuffle(X_set)
 		np.random.set_state(rng_state)
@@ -124,14 +131,11 @@ def trainRNNClassifier(X_set, y_set, foldCount):
 		
 		X_test= np.reshape(X_test,(600, 20, 5))
 
-		# truncate and pad input sequences
 		X_train= np.reshape(X_train,(2400, 20, 5))
 		
-		#model.fit(X_train, y_train, batch_size=400, epochs=100, verbose=0)
-		for bNumber in range(4):
-			model.fit(X_train[(bNumber*600):(bNumber*600 + 600)], y_train[(bNumber*600):(bNumber*600 + 600)], batch_size=600, epochs=epochCount, verbose=0, shuffle=False)
+		model = trainRNNClassifier(X_train, y_train)
 		
-		scores = model.evaluate(X_test,y_test,batch_size=600, verbose=0)
+		scores = model.evaluate(X_test,y_test,verbose=0)
 		
 		
 		'''# re-define model to predict/evaluate on a different batch size
@@ -166,9 +170,6 @@ def trainRNNClassifier(X_set, y_set, foldCount):
 		#print("Param nr:"+str(plotcounter)+"; Fold nr:" + str(fold))
 		lossarray.append(scores[0])
 		accarray.append(scores[1])
-		
-		#reset the states so the model does not carry info over
-		model.reset_states()
 		
 	return lossarray,accarray
 	
@@ -286,7 +287,7 @@ def preprocessRNNClassifier(paramVector):
 
 		totalSize = totalSize + 75
 		
-		lossarray,accarray = trainRNNClassifier(generate_quadratic, labels, 5);
+		lossarray,accarray = evaluateRNNClassifier(generate_quadratic, labels, 5);
 		
 		avgloss = sum(lossarray) / float(len(lossarray))
 		avgacc = sum(accarray) / float(len(accarray))
