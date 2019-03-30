@@ -19,7 +19,18 @@ import statistics
 epochCount = 100
 batchSize = 128
 hiddenUnitCount = 32
+trainingRatio = 0.8
 
+#Multiple of 3
+numLinearData = 1500
+numLinearDataSingle = int(numLinearData / 3)
+#For our sick patient data
+numExponentialDecreasing = 675
+numExponentialDecreasingFalse = 75
+numExponentialIncreasing = 675
+numExponentialIncreasingFalse = 75
+
+totalDataLen = numLinearData + numExponentialDecreasing + numExponentialDecreasingFalse + numExponentialIncreasing + numExponentialIncreasingFalse
 
 hdlconst = 8
 ldlconst = 8
@@ -99,6 +110,100 @@ def getExpUBP(i, reverse, offsetcoefficient):
 		return expmajoritysteepness*pow(1.2, (i+1)) + 95 - (majorityelementrange*offsetcoefficient)
 	
 
+def generateSyntheticData(curveType, dataQuantity, currentParameters, isIncreasing = False, isError = False):
+	if curveType == 'Linear':
+		#Does it for 3 times
+		displacement = 0
+		X_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement)),20,5))	
+		y_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement))))
+		for k in range(len(majoritylineardisplacement)):
+			for j in range(dataQuantity):
+				newseq = np.zeros((20,5))
+				for i in range(20):
+					perturbed_hdl_value = hdl_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[0][0]
+					perturbed_ldl_value = ldl_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[1][0]
+					perturbed_trigs_value = trigs_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[2][0]
+					perturbed_hba1c_value = hba1c_value + minoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[3][0]
+					perturbed_ubp_value = ubp_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[4][0]
+					newseq[i][0] = perturbed_hdl_value
+					newseq[i][1] = perturbed_ldl_value
+					newseq[i][2] = perturbed_trigs_value
+					newseq[i][3] = perturbed_hba1c_value
+					newseq[i][4] = perturbed_ubp_value
+				y_generated[j+displacement] = 0
+				X_generated[j+displacement] = newseq
+				
+			displacement = displacement + dataQuantity
+			
+		return X_generated, y_generated	
+		
+	elif curveType == 'Exponential':
+		X_generated = np.zeros((dataQuantity,20,5))	
+		y_generated = np.zeros((dataQuantity))
+		
+		if isError == True:
+			positionalMajorityShift = 0
+			positionalMinorityShift = 0
+			if isIncreasing == True:
+				positionalMajorityShift = -(majorityelementrange)
+				positionalMinorityShift = -(minorityelementrange)
+			elif isIncreasing == False:
+				positionalMajorityShift = majorityelementrange
+				positionalMinorityShift = minorityelementrange
+			#no response
+			for j in range(dataQuantity):
+				newseq = np.zeros((20,5))
+				for i in range(20):
+					perturbed_hdl_value = hdl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+					perturbed_ldl_value = ldl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
+					perturbed_trigs_value = trigs_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
+					perturbed_hba1c_value = hba1c_value + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
+					perturbed_ubp_value = ubp_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
+					newseq[i][0] = perturbed_hdl_value
+					newseq[i][1] = perturbed_ldl_value
+					newseq[i][2] = perturbed_trigs_value
+					newseq[i][3] = perturbed_hba1c_value
+					newseq[i][4] = perturbed_ubp_value
+				y_generated[j] = 1
+				X_generated[j] = newseq
+		elif isError == False:
+			isReverse = -1
+			positionalMajorityShift = 0
+			positionalMinorityShift = 0
+			if isIncreasing == True:
+				isReverse = 0
+				positionalMajorityShift = -(initialexpshift * majorityelementrange)
+				positionalMinorityShift = -(initialexpshift * minorityelementrange)
+			elif isIncreasing == False:
+				isReverse = 1
+				positionalMajorityShift = (initialexpshift * majorityelementrange)
+				positionalMinorityShift = (initialexpshift * minorityelementrange)
+			#Quadratic increasing with response
+			for j in range(dataQuantity):
+				newseq = np.zeros((20,5))
+				for i in range(20):
+					hdl_value_quad = getExpHDL(i,isReverse,currentParameters[0][1])
+					ldl_value_quad = getExpLDL(i,isReverse,currentParameters[1][1])
+					trigs_value_quad = getExpTRIGS(i,isReverse,currentParameters[2][1])
+					hba1c_value_quad = getExpHBA1C(i,isReverse,currentParameters[3][1])
+					ubp_value_quad = getExpUBP(i,isReverse,currentParameters[4][1])
+					perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+					perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
+					perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
+					perturbed_hba1c_value = hba1c_value_quad + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
+					perturbed_ubp_value = ubp_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
+					newseq[i][0] = perturbed_hdl_value
+					newseq[i][1] = perturbed_ldl_value
+					newseq[i][2] = perturbed_trigs_value
+					newseq[i][3] = perturbed_hba1c_value
+					newseq[i][4] = perturbed_ubp_value
+				y_generated[j] = 1
+				X_generated[j] = newseq	
+		
+		return X_generated, y_generated
+		
+	return None,None
+	
 def trainRNNClassifier(X_train,y_train):
 
 	# create the model
@@ -124,14 +229,16 @@ def evaluateRNNClassifier(X_set, y_set, foldCount):
 		np.random.set_state(rng_state)
 		np.random.shuffle(y_set)
 		
-		X_train = X_set[:2400]
-		y_train = y_set[:2400]
-		X_test = X_set[2400:]
-		y_test = y_set[2400:]
+		trainingCount = int(trainingRatio * len(X_set))
 		
-		X_test= np.reshape(X_test,(600, 20, 5))
+		X_train = X_set[:trainingCount]
+		y_train = y_set[:trainingCount]
+		X_test = X_set[trainingCount:]
+		y_test = y_set[trainingCount:]
 
-		X_train= np.reshape(X_train,(2400, 20, 5))
+		X_train= np.reshape(X_train,(trainingCount, 20, 5))
+		
+		X_test= np.reshape(X_test,(len(X_set) - trainingCount, 20, 5))
 		
 		model = trainRNNClassifier(X_train, y_train)
 		
@@ -178,116 +285,32 @@ def preprocessRNNClassifier(paramVector):
 
 	for curparamseq in paramvector:
 		totalSize = 0
-		generate_quadratic = np.zeros((3000,20,5))	
-		labels = np.zeros((3000))
+		#syntheticDataset = np.zeros((totalDataLen,20,5))	
+		#labels = np.zeros((totalDataLen))
+		syntheticDataset = []
+		labels = []
 
-		for k in range(len(majoritylineardisplacement)):
-			for j in range(500):
-				newseq = np.zeros((20,5))
-				for i in range(20):
-					perturbed_hdl_value = hdl_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * curparamseq[0][0]
-					perturbed_ldl_value = ldl_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * curparamseq[1][0]
-					perturbed_trigs_value = trigs_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * curparamseq[2][0]
-					perturbed_hba1c_value = hba1c_value + minoritylineardisplacement[k] + ( np.random.normal(0,1) ) * curparamseq[3][0]
-					perturbed_ubp_value = ubp_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * curparamseq[4][0]
-					newseq[i][0] = perturbed_hdl_value
-					newseq[i][1] = perturbed_ldl_value
-					newseq[i][2] = perturbed_trigs_value
-					newseq[i][3] = perturbed_hba1c_value
-					newseq[i][4] = perturbed_ubp_value
-				labels[j+totalSize] = 0
-				generate_quadratic[j+totalSize] = newseq
-
-			totalSize = totalSize + 500
+		tempX, tempY = generateSyntheticData('Linear', numLinearDataSingle, curparamseq)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
 			
-			
-		#Quadratic increasing with response
-		for j in range(675):
-			newseq = np.zeros((20,5))
-			for i in range(20):
-				hdl_value_quad = getExpHDL(i,0,curparamseq[0][1])
-				ldl_value_quad = getExpLDL(i,0,curparamseq[1][1])
-				trigs_value_quad = getExpTRIGS(i,0,curparamseq[2][1])
-				hba1c_value_quad = getExpHBA1C(i,0,curparamseq[3][1])
-				ubp_value_quad = getExpUBP(i,0,curparamseq[4][1])
-				perturbed_hdl_value = hdl_value_quad - (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[0][0]
-				perturbed_ldl_value = ldl_value_quad - (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[1][0]
-				perturbed_trigs_value = trigs_value_quad - (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[2][0]
-				perturbed_hba1c_value = hba1c_value_quad - (initialexpshift * minorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[3][0]
-				perturbed_ubp_value = ubp_value_quad - (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[4][0]
-				newseq[i][0] = perturbed_hdl_value
-				newseq[i][1] = perturbed_ldl_value
-				newseq[i][2] = perturbed_trigs_value
-				newseq[i][3] = perturbed_hba1c_value
-				newseq[i][4] = perturbed_ubp_value
-			labels[j+totalSize] = 1
-			generate_quadratic[j+totalSize] = newseq
-
-		totalSize = totalSize + 675
+		tempX, tempY = generateSyntheticData('Exponential', numExponentialIncreasing, curparamseq, True, False)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
 		
-		#no response
-		for j in range(75):
-			newseq = np.zeros((20,5))
-			for i in range(20):
-				perturbed_hdl_value = hdl_value - majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[0][0]
-				perturbed_ldl_value = ldl_value - majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[1][0]
-				perturbed_trigs_value = trigs_value - majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[2][0]
-				perturbed_hba1c_value = hba1c_value - minorityelementrange + ( np.random.normal(0,1) ) * curparamseq[3][0]
-				perturbed_ubp_value = ubp_value - majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[4][0]
-				newseq[i][0] = perturbed_hdl_value
-				newseq[i][1] = perturbed_ldl_value
-				newseq[i][2] = perturbed_trigs_value
-				newseq[i][3] = perturbed_hba1c_value
-				newseq[i][4] = perturbed_ubp_value
-			labels[j+totalSize] = 1
-			generate_quadratic[j+totalSize] = newseq
-
-		totalSize = totalSize + 75
-			
-		#Quadratic decreasing with response
-		for j in range(675):
-			newseq = np.zeros((20,5))
-			for i in range(20):
-				hdl_value_quad = getExpHDL(i,1,curparamseq[0][1])
-				ldl_value_quad = getExpLDL(i,1,curparamseq[1][1])
-				trigs_value_quad = getExpTRIGS(i,1,curparamseq[2][1])
-				hba1c_value_quad = getExpHBA1C(i,1,curparamseq[3][1])
-				ubp_value_quad = getExpUBP(i,1,curparamseq[4][1])
-				perturbed_hdl_value = hdl_value_quad + (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[0][0]
-				perturbed_ldl_value = ldl_value_quad + (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[1][0]
-				perturbed_trigs_value = trigs_value_quad + (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[2][0]
-				perturbed_hba1c_value = hba1c_value_quad + (initialexpshift * minorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[3][0]
-				perturbed_ubp_value = ubp_value_quad + (initialexpshift * majorityelementrange) + ( np.random.normal(0,1) ) * curparamseq[4][0]
-				newseq[i][0] = perturbed_hdl_value
-				newseq[i][1] = perturbed_ldl_value
-				newseq[i][2] = perturbed_trigs_value
-				newseq[i][3] = perturbed_hba1c_value
-				newseq[i][4] = perturbed_ubp_value
-			labels[j+totalSize] = 1
-			generate_quadratic[j+totalSize] = newseq		
-			
-		totalSize = totalSize + 675
+		tempX, tempY = generateSyntheticData('Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
 		
-		#no response
-		for j in range(75):
-			newseq = np.zeros((20,5))
-			for i in range(20):
-				perturbed_hdl_value = hdl_value + majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[0][0]
-				perturbed_ldl_value = ldl_value + majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[1][0]
-				perturbed_trigs_value = trigs_value + majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[2][0]
-				perturbed_hba1c_value = hba1c_value + minorityelementrange + ( np.random.normal(0,1) ) * curparamseq[3][0]
-				perturbed_ubp_value = ubp_value + majorityelementrange + ( np.random.normal(0,1) ) * curparamseq[4][0]
-				newseq[i][0] = perturbed_hdl_value
-				newseq[i][1] = perturbed_ldl_value
-				newseq[i][2] = perturbed_trigs_value
-				newseq[i][3] = perturbed_hba1c_value
-				newseq[i][4] = perturbed_ubp_value
-			labels[j+totalSize] = 1
-			generate_quadratic[j+totalSize] = newseq
-
-		totalSize = totalSize + 75
+		tempX, tempY = generateSyntheticData('Exponential', numExponentialDecreasing, curparamseq, False, False)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
 		
-		lossarray,accarray = evaluateRNNClassifier(generate_quadratic, labels, 5);
+		tempX, tempY = generateSyntheticData('Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		lossarray,accarray = evaluateRNNClassifier(syntheticDataset, labels, 5);
 		
 		avgloss = sum(lossarray) / float(len(lossarray))
 		avgacc = sum(accarray) / float(len(accarray))
@@ -305,7 +328,7 @@ def preprocessRNNClassifier(paramVector):
 			index.append(i+1)
 
 		#slope, intercept, r_value, p_value, std_err = stats.linregress(index,hdllist)
-		slope, intercept, r_value, p_value, std_err = stats.linregress(index,generate_quadratic[2800,:20,0])
+		slope, intercept, r_value, p_value, std_err = stats.linregress(index,syntheticDataset[2800,:20,0])
 
 		linear = []	
 		for i in range(20):
@@ -313,7 +336,7 @@ def preprocessRNNClassifier(paramVector):
 			
 			
 		#plt.plot(index, hdllist, index, linear)
-		plt.plot(index, generate_quadratic[2800,:20,0], index, linear)
+		plt.plot(index, syntheticDataset[2800,:20,0], index, linear)
 		plt.xticks(index)
 		plt.ylabel('HDL levels')
 		plt.xlabel('NO of visit')
@@ -324,7 +347,7 @@ def preprocessRNNClassifier(paramVector):
 		plt.scatter(plotcounter, avgacc)
 		plt.pause(0.05)
 		plotcounter = plotcounter + 1
-	#plt.show()
+	plt.show()
 	
 paramvector = []
 
