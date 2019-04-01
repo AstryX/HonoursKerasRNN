@@ -9,8 +9,10 @@ from keras.layers import Dense
 from keras.layers import CuDNNLSTM
 from keras.layers import Flatten
 from keras.layers import TimeDistributed
+from keras.layers import Activation
 import matplotlib.pyplot as plt
 from scipy import stats
+import tensorflow as tf
 
 import statistics
 
@@ -24,13 +26,13 @@ trainingRatio = 0.8
 #Multiple of 3
 numLinearData = 1500
 numLinearDataSingle = int(numLinearData / 3)
-#For our sick patient data
+#For our sick patient data will get multiplied by 3
 numExponentialDecreasing = 675
 numExponentialDecreasingFalse = 75
 numExponentialIncreasing = 675
 numExponentialIncreasingFalse = 75
 
-totalDataLen = numLinearData + numExponentialDecreasing + numExponentialDecreasingFalse + numExponentialIncreasing + numExponentialIncreasingFalse
+totalDataLen = numLinearData + 3 * (numExponentialDecreasing + numExponentialDecreasingFalse + numExponentialIncreasing + numExponentialIncreasingFalse)
 
 hdlconst = 8
 ldlconst = 8
@@ -110,12 +112,12 @@ def getExpUBP(i, reverse, offsetcoefficient):
 		return expmajoritysteepness*pow(1.2, (i+1)) + 95 - (majorityelementrange*offsetcoefficient)
 	
 
-def generateSyntheticData(curveType, dataQuantity, currentParameters, isIncreasing = False, isError = False):
-	if curveType == 'Linear':
+def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, isIncreasing = False, isError = False):
+	if curveType == 'Linear' and drugType == 'NoDrug':
 		#Does it for 3 times
 		displacement = 0
 		X_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement)),20,5))	
-		y_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement))))
+		y_generated = []
 		for k in range(len(majoritylineardisplacement)):
 			for j in range(dataQuantity):
 				newseq = np.zeros((20,5))
@@ -130,7 +132,7 @@ def generateSyntheticData(curveType, dataQuantity, currentParameters, isIncreasi
 					newseq[i][2] = perturbed_trigs_value
 					newseq[i][3] = perturbed_hba1c_value
 					newseq[i][4] = perturbed_ubp_value
-				y_generated[j+displacement] = 0
+				y_generated.append([1,0,0,0])
 				X_generated[j+displacement] = newseq
 				
 			displacement = displacement + dataQuantity
@@ -139,67 +141,181 @@ def generateSyntheticData(curveType, dataQuantity, currentParameters, isIncreasi
 		
 	elif curveType == 'Exponential':
 		X_generated = np.zeros((dataQuantity,20,5))	
-		y_generated = np.zeros((dataQuantity))
+		y_generated = []
 		
-		if isError == True:
-			positionalMajorityShift = 0
-			positionalMinorityShift = 0
-			if isIncreasing == True:
-				positionalMajorityShift = -(majorityelementrange)
-				positionalMinorityShift = -(minorityelementrange)
-			elif isIncreasing == False:
-				positionalMajorityShift = majorityelementrange
-				positionalMinorityShift = minorityelementrange
-			#no response
-			for j in range(dataQuantity):
-				newseq = np.zeros((20,5))
-				for i in range(20):
-					perturbed_hdl_value = hdl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
-					perturbed_ldl_value = ldl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
-					perturbed_trigs_value = trigs_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
-					perturbed_hba1c_value = hba1c_value + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
-					perturbed_ubp_value = ubp_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
-					newseq[i][0] = perturbed_hdl_value
-					newseq[i][1] = perturbed_ldl_value
-					newseq[i][2] = perturbed_trigs_value
-					newseq[i][3] = perturbed_hba1c_value
-					newseq[i][4] = perturbed_ubp_value
-				y_generated[j] = 1
-				X_generated[j] = newseq
-		elif isError == False:
-			isReverse = -1
-			positionalMajorityShift = 0
-			positionalMinorityShift = 0
-			if isIncreasing == True:
-				isReverse = 0
-				positionalMajorityShift = -(initialexpshift * majorityelementrange)
-				positionalMinorityShift = -(initialexpshift * minorityelementrange)
-			elif isIncreasing == False:
-				isReverse = 1
-				positionalMajorityShift = (initialexpshift * majorityelementrange)
-				positionalMinorityShift = (initialexpshift * minorityelementrange)
-			#Quadratic increasing with response
-			for j in range(dataQuantity):
-				newseq = np.zeros((20,5))
-				for i in range(20):
-					hdl_value_quad = getExpHDL(i,isReverse,currentParameters[0][1])
-					ldl_value_quad = getExpLDL(i,isReverse,currentParameters[1][1])
-					trigs_value_quad = getExpTRIGS(i,isReverse,currentParameters[2][1])
-					hba1c_value_quad = getExpHBA1C(i,isReverse,currentParameters[3][1])
-					ubp_value_quad = getExpUBP(i,isReverse,currentParameters[4][1])
-					perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
-					perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
-					perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
-					perturbed_hba1c_value = hba1c_value_quad + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
-					perturbed_ubp_value = ubp_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
-					newseq[i][0] = perturbed_hdl_value
-					newseq[i][1] = perturbed_ldl_value
-					newseq[i][2] = perturbed_trigs_value
-					newseq[i][3] = perturbed_hba1c_value
-					newseq[i][4] = perturbed_ubp_value
-				y_generated[j] = 1
-				X_generated[j] = newseq	
+		if drugType == 'Drug1Drug2':
+			if isError == True:
+				positionalMajorityShift = 0
+				positionalMinorityShift = 0
+				if isIncreasing == True:
+					positionalMajorityShift = -(majorityelementrange)
+					positionalMinorityShift = -(minorityelementrange)
+				elif isIncreasing == False:
+					positionalMajorityShift = majorityelementrange
+					positionalMinorityShift = minorityelementrange
+				#no response
+				for j in range(dataQuantity):
+					newseq = np.zeros((20,5))
+					for i in range(20):
+						perturbed_hdl_value = hdl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+						perturbed_ldl_value = ldl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
+						perturbed_trigs_value = trigs_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
+						perturbed_hba1c_value = hba1c_value + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
+						perturbed_ubp_value = ubp_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
+						newseq[i][0] = perturbed_hdl_value
+						newseq[i][1] = perturbed_ldl_value
+						newseq[i][2] = perturbed_trigs_value
+						newseq[i][3] = perturbed_hba1c_value
+						newseq[i][4] = perturbed_ubp_value
+					y_generated.append([0,0,0,1])
+					X_generated[j] = newseq
+			elif isError == False:
+				isReverse = -1
+				positionalMajorityShift = 0
+				positionalMinorityShift = 0
+				if isIncreasing == True:
+					isReverse = 0
+					positionalMajorityShift = -(initialexpshift * majorityelementrange)
+					positionalMinorityShift = -(initialexpshift * minorityelementrange)
+				elif isIncreasing == False:
+					isReverse = 1
+					positionalMajorityShift = (initialexpshift * majorityelementrange)
+					positionalMinorityShift = (initialexpshift * minorityelementrange)
+				#Quadratic increasing with response
+				for j in range(dataQuantity):
+					newseq = np.zeros((20,5))
+					for i in range(20):
+						hdl_value_quad = getExpHDL(i,isReverse,currentParameters[0][1])
+						ldl_value_quad = getExpLDL(i,isReverse,currentParameters[1][1])
+						trigs_value_quad = getExpTRIGS(i,isReverse,currentParameters[2][1])
+						hba1c_value_quad = getExpHBA1C(i,isReverse,currentParameters[3][1])
+						ubp_value_quad = getExpUBP(i,isReverse,currentParameters[4][1])
+						perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+						perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
+						perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
+						perturbed_hba1c_value = hba1c_value_quad + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
+						perturbed_ubp_value = ubp_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
+						newseq[i][0] = perturbed_hdl_value
+						newseq[i][1] = perturbed_ldl_value
+						newseq[i][2] = perturbed_trigs_value
+						newseq[i][3] = perturbed_hba1c_value
+						newseq[i][4] = perturbed_ubp_value
+					y_generated.append([0,0,0,1])
+					X_generated[j] = newseq	
 		
+		elif drugType == 'Drug1':
+			if isError == True:
+				positionalMajorityShift = 0
+				positionalMinorityShift = 0
+				if isIncreasing == True:
+					positionalMajorityShift = -(majorityelementrange)
+					positionalMinorityShift = -(minorityelementrange)
+				elif isIncreasing == False:
+					positionalMajorityShift = majorityelementrange
+					positionalMinorityShift = minorityelementrange
+				#no response
+				for j in range(dataQuantity):
+					newseq = np.zeros((20,5))
+					for i in range(20):
+						perturbed_hdl_value = hdl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+						perturbed_ldl_value = ldl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
+						perturbed_trigs_value = trigs_value + ( np.random.normal(0,1) ) * currentParameters[2][0]
+						perturbed_hba1c_value = hba1c_value + ( np.random.normal(0,1) ) * currentParameters[3][0]
+						perturbed_ubp_value = ubp_value + ( np.random.normal(0,1) ) * currentParameters[4][0]
+						newseq[i][0] = perturbed_hdl_value
+						newseq[i][1] = perturbed_ldl_value
+						newseq[i][2] = perturbed_trigs_value
+						newseq[i][3] = perturbed_hba1c_value
+						newseq[i][4] = perturbed_ubp_value
+					y_generated.append([0,1,0,0])
+					X_generated[j] = newseq
+			elif isError == False:
+				isReverse = -1
+				positionalMajorityShift = 0
+				positionalMinorityShift = 0
+				if isIncreasing == True:
+					isReverse = 0
+					positionalMajorityShift = -(initialexpshift * majorityelementrange)
+					positionalMinorityShift = -(initialexpshift * minorityelementrange)
+				elif isIncreasing == False:
+					isReverse = 1
+					positionalMajorityShift = (initialexpshift * majorityelementrange)
+					positionalMinorityShift = (initialexpshift * minorityelementrange)
+				#Quadratic increasing with response
+				for j in range(dataQuantity):
+					newseq = np.zeros((20,5))
+					for i in range(20):
+						hdl_value_quad = getExpHDL(i,isReverse,currentParameters[0][1])
+						ldl_value_quad = getExpLDL(i,isReverse,currentParameters[1][1])
+						perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+						perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
+						perturbed_trigs_value = trigs_value + ( np.random.normal(0,1) ) * currentParameters[2][0]
+						perturbed_hba1c_value = hba1c_value + ( np.random.normal(0,1) ) * currentParameters[3][0]
+						perturbed_ubp_value = ubp_value + ( np.random.normal(0,1) ) * currentParameters[4][0]
+						newseq[i][0] = perturbed_hdl_value
+						newseq[i][1] = perturbed_ldl_value
+						newseq[i][2] = perturbed_trigs_value
+						newseq[i][3] = perturbed_hba1c_value
+						newseq[i][4] = perturbed_ubp_value
+					y_generated.append([0,1,0,0])
+					X_generated[j] = newseq				
+		elif drugType == 'Drug2':
+			if isError == True:
+				positionalMajorityShift = 0
+				positionalMinorityShift = 0
+				if isIncreasing == True:
+					positionalMajorityShift = -(majorityelementrange)
+					positionalMinorityShift = -(minorityelementrange)
+				elif isIncreasing == False:
+					positionalMajorityShift = majorityelementrange
+					positionalMinorityShift = minorityelementrange
+				#no response
+				for j in range(dataQuantity):
+					newseq = np.zeros((20,5))
+					for i in range(20):
+						perturbed_hdl_value = hdl_value + ( np.random.normal(0,1) ) * currentParameters[0][0]
+						perturbed_ldl_value = ldl_value + ( np.random.normal(0,1) ) * currentParameters[1][0]
+						perturbed_trigs_value = trigs_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
+						perturbed_hba1c_value = hba1c_value + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
+						perturbed_ubp_value = ubp_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
+						newseq[i][0] = perturbed_hdl_value
+						newseq[i][1] = perturbed_ldl_value
+						newseq[i][2] = perturbed_trigs_value
+						newseq[i][3] = perturbed_hba1c_value
+						newseq[i][4] = perturbed_ubp_value
+					y_generated.append([0,0,1,0])
+					X_generated[j] = newseq
+			elif isError == False:
+				isReverse = -1
+				positionalMajorityShift = 0
+				positionalMinorityShift = 0
+				if isIncreasing == True:
+					isReverse = 0
+					positionalMajorityShift = -(initialexpshift * majorityelementrange)
+					positionalMinorityShift = -(initialexpshift * minorityelementrange)
+				elif isIncreasing == False:
+					isReverse = 1
+					positionalMajorityShift = (initialexpshift * majorityelementrange)
+					positionalMinorityShift = (initialexpshift * minorityelementrange)
+				#Quadratic increasing with response
+				for j in range(dataQuantity):
+					newseq = np.zeros((20,5))
+					for i in range(20):
+						trigs_value_quad = getExpTRIGS(i,isReverse,currentParameters[2][1])
+						hba1c_value_quad = getExpHBA1C(i,isReverse,currentParameters[3][1])
+						ubp_value_quad = getExpUBP(i,isReverse,currentParameters[4][1])
+						perturbed_hdl_value = hdl_value + ( np.random.normal(0,1) ) * currentParameters[0][0]
+						perturbed_ldl_value = ldl_value + ( np.random.normal(0,1) ) * currentParameters[1][0]
+						perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
+						perturbed_hba1c_value = hba1c_value_quad + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
+						perturbed_ubp_value = ubp_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[4][0]
+						newseq[i][0] = perturbed_hdl_value
+						newseq[i][1] = perturbed_ldl_value
+						newseq[i][2] = perturbed_trigs_value
+						newseq[i][3] = perturbed_hba1c_value
+						newseq[i][4] = perturbed_ubp_value
+					y_generated.append([0,0,1,0])
+					X_generated[j] = newseq			
 		return X_generated, y_generated
 		
 	return None,None
@@ -210,9 +326,12 @@ def trainRNNClassifier(X_train,y_train):
 	model = Sequential()
 	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(20,5), return_sequences=True))
 	model.add(CuDNNLSTM(hiddenUnitCount, return_sequences=True))
-	model.add(Flatten())
-	model.add(Dense(1, activation='sigmoid'))
+	#model.add(Flatten())
+	#model.add(Dense(1, activation='sigmoid'))
+	#model.add(Dense(4, activation='softmax'))
 	#model.add(TimeDistributed(Dense(1, activation='sigmoid')))
+	model.add(CuDNNLSTM(4, return_sequences=False))
+	model.add(Activation('sigmoid'))
 	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 	
 	model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=0, shuffle=False)
@@ -244,6 +363,10 @@ def evaluateRNNClassifier(X_set, y_set, foldCount):
 		
 		scores = model.evaluate(X_test,y_test,verbose=0)
 		
+		y_New = model.predict_classes(X_test)
+		with open('your_file.txt', 'w') as f:
+			for item in y_New:
+				f.write("%s\n" % item)
 		
 		'''# re-define model to predict/evaluate on a different batch size
 		n_batch = 1
@@ -290,23 +413,55 @@ def preprocessRNNClassifier(paramVector):
 		syntheticDataset = []
 		labels = []
 
-		tempX, tempY = generateSyntheticData('Linear', numLinearDataSingle, curparamseq)
+		tempX, tempY = generateSyntheticData('NoDrug', 'Linear', numLinearDataSingle, curparamseq)
 		syntheticDataset.extend(tempX)
 		labels.extend(tempY)
 			
-		tempX, tempY = generateSyntheticData('Exponential', numExponentialIncreasing, curparamseq, True, False)
+		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
 		syntheticDataset.extend(tempX)
 		labels.extend(tempY)
 		
-		tempX, tempY = generateSyntheticData('Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
 		syntheticDataset.extend(tempX)
 		labels.extend(tempY)
 		
-		tempX, tempY = generateSyntheticData('Exponential', numExponentialDecreasing, curparamseq, False, False)
+		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
 		syntheticDataset.extend(tempX)
 		labels.extend(tempY)
 		
-		tempX, tempY = generateSyntheticData('Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+
+		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+			
+		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
+		syntheticDataset.extend(tempX)
+		labels.extend(tempY)
+		
+		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
 		syntheticDataset.extend(tempX)
 		labels.extend(tempY)
 		
@@ -348,6 +503,15 @@ def preprocessRNNClassifier(paramVector):
 		plt.pause(0.05)
 		plotcounter = plotcounter + 1
 	plt.show()
+	
+'''def trainRNNRegressor(X_train,y_train):
+	
+	
+def preprocessRNNRegressor(X_train,y_train):
+	
+#Used for the regressor problem that needs different labels
+def constructSyntheticDataLabels(X_train):'''
+	
 	
 paramvector = []
 
