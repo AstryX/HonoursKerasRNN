@@ -384,65 +384,67 @@ def evaluateRNNClassifier(X_set, y_set, foldCount):
 		
 	return lossarray,accarray
 	
+def retrieveConcatenatedDrugData(curparamseq):
+	tempX, tempY = generateSyntheticData('NoDrug', 'Linear', numLinearDataSingle, curparamseq)
+	syntheticDataset = tempX
+	labels = tempY
+	
+	tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+
+	tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+		
+	tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempY), axis=0)
+	
+	tempX, tempZ = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
+	syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
+	labels = np.concatenate((labels,tempZ), axis=0)
+	
+	return syntheticDataset, labels
+	
 def preprocessRNNClassifier(paramVector):
 	plotcounter = 0
 
 	for curparamseq in paramvector:
-		totalSize = 0
-		#syntheticDataset = np.zeros((totalDataLen,20,5))	
-		#labels = np.zeros((totalDataLen))
 
-		tempX, tempY = generateSyntheticData('NoDrug', 'Linear', numLinearDataSingle, curparamseq)
-		syntheticDataset = tempX
-		labels = tempY
-		
-		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug1', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-
-		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug2', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-			
-		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialIncreasing, curparamseq, True, False)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialIncreasingFalse, curparamseq, True, True)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempY = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialDecreasing, curparamseq, False, False)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempY), axis=0)
-		
-		tempX, tempZ = generateSyntheticData('Drug1Drug2', 'Exponential', numExponentialDecreasingFalse, curparamseq, False, True)
-		syntheticDataset = np.concatenate((syntheticDataset,tempX), axis=0)
-		labels = np.concatenate((labels,tempZ), axis=0)
+		syntheticDataset, labels = retrieveConcatenatedDrugData(curparamseq)
 		
 		lossarray,accarray = evaluateRNNClassifier(syntheticDataset, labels, 5);
 		
@@ -481,48 +483,76 @@ def preprocessRNNClassifier(paramVector):
 		plt.scatter(plotcounter, avgacc)
 		plt.pause(0.05)
 		plotcounter = plotcounter + 1
-	plt.show()
-
+	plt.show()	
+	
 def trainRNNRegressor(X_train,y_train):
 
 	# create the model
 	model = Sequential()
-	model.add(CuDNNLSTM(50, input_shape=(None, 1)))
-	model.add(Dense(1, activation='relu',))
-	model.compile(optimizer='adam', loss='mse')
+	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2), return_sequences=True))
+	model.add(CuDNNLSTM(hiddenUnitCount))
+	'''model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2)))'''
+	
+	model.add(Dense(2))
+	model.compile(optimizer='adam', loss='mae')
 	
 	model.fit(X_train, y_train, batch_size=1, epochs=epochCount, verbose=0, shuffle=False)
 	
 	return model
 	
-def preprocessRNNRegressor():
-	X_data = np.array([[[1],[2]],[[1],[2],[3]],[[1],[2],[3],[5]],[[1],[2],[3],[5],[8]]])
+def preprocessRNNRegressor(paramvector):
+
+	syntheticDataset, labels = retrieveConcatenatedDrugData(paramvector)
 	
-	print(X_data.shape)
-	y_data = [3,5,8,13]
+	X_regressor,y_regressor = constructSyntheticDataPredictions(syntheticDataset)
+
+	'''rng_state = np.random.get_state()
+	np.random.shuffle(X_set)
+	np.random.set_state(rng_state)
+	np.random.shuffle(y_set)
 	
-	#X_data = np.array([[[1],[2],[3],[5]],[[2],[3],[5],[8]],[[3],[5],[8],[13]],[[5],[8],[13],[21]]])
-	#X_data = np.reshape(X_data,(4, 4, 1))
-	#y_data = [8,13,21,34]
-	print(x)
-	print(X_data)
-	# create a random label
+	trainingCount = int(trainingRatio * len(X_set))
+	
+	X_train = X_set[:trainingCount]
+	y_train = y_set[:trainingCount]
+	X_test = X_set[trainingCount:]
+	y_test = y_set[trainingCount:]
+	
+	model = trainRNNRegressor(X_train, y_train)'''
+
+	#X_data = np.array(([[[1],[2]],[[1],[2],[3]],[[1],[2],[3],[5]],[[1],[2],[3],[5],[8]]]))
+	#y_data = [3,5,8,13]
+	
+	X_data = np.array([[[1,1],[2,1.5],[3,2.5],[5,4]],[[2,1.5],[3,2.5],[5,4],[8,6.5]],[[3,2.5],[5,4],[8,6.5],[13,10.5]],[[5,4],[8,6.5],[13,10.5],[21,17]]])
+	y_data = np.array([[8,6.5],[13,10.5],[21,17],[34,27.5]])
+	
+	x = np.random.randn(1,7,1)
 	y = np.random.randn(1)
-	model = trainRNNRegressor(x,y)
+	
 	model = trainRNNRegressor(X_data,y_data)
 	
-	testx = np.array([[[1],[2],[3],[5]]])
+	testx = np.array([[[1,1],[2,1.5],[3,2.5],[5,4]]])
 	#testx = np.reshape(testx,(1, 4, 1))
 	
 	ytest = model.predict(testx)
 	print('Output of regressor:')
 	print(ytest)
 
-'''
+
 #Used for the regressor problem that needs different labels
-def constructSyntheticDataPredictions(X_train):'''
+def constructSyntheticDataPredictions(X_train):
+	X_seqtrain = []
+	y_seqtrain = []
+	for sequence in X_train:
+		for i in range(len(sequence)-1):
+			temp_x = []
+			for j in range(i+1):
+				temp_x.append(sequence[j])
+			X_seqtrain.append(temp_x)
+			y_seqtrain.append(sequence[i+1])
 	
-	
+	return X_seqtrain, y_seqtrain
+
 paramvector = []
 
 for it in range(4):
@@ -537,4 +567,5 @@ for it in range(4):
 	paramvector.append(paramseq)
 
 #preprocessRNNClassifier(paramvector)
-preprocessRNNRegressor()
+preprocessRNNRegressor(paramvector[0])
+
