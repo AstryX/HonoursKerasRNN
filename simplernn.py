@@ -10,6 +10,7 @@ from keras.layers import CuDNNLSTM
 from keras.layers import Flatten
 from keras.layers import TimeDistributed
 from keras.layers import Activation
+from keras.models import model_from_yaml
 import matplotlib.pyplot as plt
 from scipy import stats
 import tensorflow as tf
@@ -500,7 +501,7 @@ def trainRNNRegressor(X_train,y_train):
 
 	# create the model
 	model = Sequential()
-	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(19, numFeatures), return_sequences=True))
+	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, numFeatures), return_sequences=True))
 	model.add(CuDNNLSTM(hiddenUnitCount))
 	'''model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2), return_sequences=True))'''
 	
@@ -559,6 +560,14 @@ def preprocessRNNRegressor(paramvector):
 	print(ytest)
 	print('Real output')
 	print(y_test[20])
+	
+	# serialize model to YAML
+	model_yaml = model.to_yaml()
+	with open("model.yaml", "w") as yaml_file:
+		yaml_file.write(model_yaml)
+	# serialize weights to HDF5
+	model.save_weights("model.h5")
+	print("Successfully saved the model.")
 
 #Used for the regressor problem that needs different labels
 def constructSyntheticDataPredictions(X_train, shouldPadWithZeros):
@@ -594,6 +603,15 @@ for it in range(4):
 
 #preprocessRNNClassifier(paramvector)
 preprocessRNNRegressor(paramvector[0])
+
+
+'''# load YAML and create model
+yaml_file = open('model.yaml', 'r')
+loaded_model_yaml = yaml_file.read()
+yaml_file.close()
+loaded_model = model_from_yaml(loaded_model_yaml)
+# load weights into new model
+loaded_model.load_weights("model.h5")'''
 
 
 
