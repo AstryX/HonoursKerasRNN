@@ -22,6 +22,7 @@ epochCount = 100
 batchSize = 128
 hiddenUnitCount = 32
 trainingRatio = 0.8
+numFeatures = 5
 
 #Multiple of 3
 numLinearData = 1500
@@ -116,11 +117,11 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 	if curveType == 'Linear' and drugType == 'NoDrug':
 		#Does it for 3 times
 		displacement = 0
-		X_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement)),20,5))	
+		X_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement)),20,numFeatures))	
 		y_generated = np.zeros((int(dataQuantity * len(majoritylineardisplacement))))
 		for k in range(len(majoritylineardisplacement)):
 			for j in range(dataQuantity):
-				newseq = np.zeros((20,5))
+				newseq = np.zeros((20,numFeatures))
 				for i in range(20):
 					perturbed_hdl_value = hdl_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[0][0]
 					perturbed_ldl_value = ldl_value + majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[1][0]
@@ -140,7 +141,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 		return X_generated, y_generated	
 		
 	elif curveType == 'Exponential':
-		X_generated = np.zeros((dataQuantity,20,5))	
+		X_generated = np.zeros((dataQuantity,20,numFeatures))	
 		y_generated = np.zeros((dataQuantity))
 		
 		if drugType == 'Drug1Drug2':
@@ -155,7 +156,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 					positionalMinorityShift = minorityelementrange
 				#no response
 				for j in range(dataQuantity):
-					newseq = np.zeros((20,5))
+					newseq = np.zeros((20,numFeatures))
 					for i in range(20):
 						perturbed_hdl_value = hdl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
 						perturbed_ldl_value = ldl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
@@ -183,7 +184,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 					positionalMinorityShift = (initialexpshift * minorityelementrange)
 				#Quadratic increasing with response
 				for j in range(dataQuantity):
-					newseq = np.zeros((20,5))
+					newseq = np.zeros((20,numFeatures))
 					for i in range(20):
 						hdl_value_quad = getExpHDL(i,isReverse,currentParameters[0][1])
 						ldl_value_quad = getExpLDL(i,isReverse,currentParameters[1][1])
@@ -215,7 +216,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 					positionalMinorityShift = minorityelementrange
 				#no response
 				for j in range(dataQuantity):
-					newseq = np.zeros((20,5))
+					newseq = np.zeros((20,numFeatures))
 					for i in range(20):
 						perturbed_hdl_value = hdl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
 						perturbed_ldl_value = ldl_value + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
@@ -243,7 +244,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 					positionalMinorityShift = (initialexpshift * minorityelementrange)
 				#Quadratic increasing with response
 				for j in range(dataQuantity):
-					newseq = np.zeros((20,5))
+					newseq = np.zeros((20,numFeatures))
 					for i in range(20):
 						hdl_value_quad = getExpHDL(i,isReverse,currentParameters[0][1])
 						ldl_value_quad = getExpLDL(i,isReverse,currentParameters[1][1])
@@ -271,7 +272,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 					positionalMinorityShift = minorityelementrange
 				#no response
 				for j in range(dataQuantity):
-					newseq = np.zeros((20,5))
+					newseq = np.zeros((20,numFeatures))
 					for i in range(20):
 						perturbed_hdl_value = hdl_value + ( np.random.normal(0,1) ) * currentParameters[0][0]
 						perturbed_ldl_value = ldl_value + ( np.random.normal(0,1) ) * currentParameters[1][0]
@@ -299,7 +300,7 @@ def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, 
 					positionalMinorityShift = (initialexpshift * minorityelementrange)
 				#Quadratic increasing with response
 				for j in range(dataQuantity):
-					newseq = np.zeros((20,5))
+					newseq = np.zeros((20,numFeatures))
 					for i in range(20):
 						trigs_value_quad = getExpTRIGS(i,isReverse,currentParameters[2][1])
 						hba1c_value_quad = getExpHBA1C(i,isReverse,currentParameters[3][1])
@@ -324,7 +325,7 @@ def trainRNNClassifier(X_train,y_train):
 
 	# create the model
 	model = Sequential()
-	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(20,5), return_sequences=True))
+	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(20,numFeatures), return_sequences=True))
 	model.add(CuDNNLSTM(hiddenUnitCount, return_sequences=True))
 	model.add(Flatten())
 	#model.add(Flatten())
@@ -360,8 +361,8 @@ def evaluateRNNClassifier(X_set, y_set, foldCount):
 		X_test = X_set[trainingCount:]
 		y_test = y_set[trainingCount:]
 
-		X_train= np.reshape(X_train,(trainingCount, 20, 5))
-		X_test= np.reshape(X_test,(len(X_set) - trainingCount, 20, 5))
+		X_train= np.reshape(X_train,(trainingCount, 20, numFeatures))
+		X_test= np.reshape(X_test,(len(X_set) - trainingCount, 20, numFeatures))
 		
 		model = trainRNNClassifier(X_train, y_train)
 
@@ -383,6 +384,16 @@ def evaluateRNNClassifier(X_set, y_set, foldCount):
 		accarray.append(scores[1])
 		
 	return lossarray,accarray
+	
+def padSequenceWithZeros(totalLen, curStep, dataToPad):
+	X_padded = []
+	for pad in range(totalLen - curStep - 1):
+		featurePad = []
+		for zerofeature in range(numFeatures):
+			featurePad.append(0)
+		X_padded.append(featurePad)
+	X_padded.extend(dataToPad)	
+	return X_padded
 	
 def retrieveConcatenatedDrugData(curparamseq):
 	tempX, tempY = generateSyntheticData('NoDrug', 'Linear', numLinearDataSingle, curparamseq)
@@ -489,14 +500,14 @@ def trainRNNRegressor(X_train,y_train):
 
 	# create the model
 	model = Sequential()
-	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2), return_sequences=True))
+	model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(19, numFeatures), return_sequences=True))
 	model.add(CuDNNLSTM(hiddenUnitCount))
-	'''model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2)))'''
+	'''model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2), return_sequences=True))'''
 	
-	model.add(Dense(2))
+	model.add(Dense(numFeatures))
 	model.compile(optimizer='adam', loss='mae')
 	
-	model.fit(X_train, y_train, batch_size=1, epochs=epochCount, verbose=0, shuffle=False)
+	model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=1, shuffle=False)
 	
 	return model
 	
@@ -504,23 +515,27 @@ def preprocessRNNRegressor(paramvector):
 
 	syntheticDataset, labels = retrieveConcatenatedDrugData(paramvector)
 	
-	X_regressor,y_regressor = constructSyntheticDataPredictions(syntheticDataset)
-
-	'''rng_state = np.random.get_state()
-	np.random.shuffle(X_set)
+	X_regressor,y_regressor = constructSyntheticDataPredictions(syntheticDataset,True)
+	
+	print(X_regressor[18])
+	print(X_regressor[20])
+	
+	rng_state = np.random.get_state()
+	np.random.shuffle(X_regressor)
 	np.random.set_state(rng_state)
-	np.random.shuffle(y_set)
+	np.random.shuffle(y_regressor)
 	
-	trainingCount = int(trainingRatio * len(X_set))
+	trainingCount = int(trainingRatio * len(X_regressor))
 	
-	X_train = X_set[:trainingCount]
-	y_train = y_set[:trainingCount]
-	X_test = X_set[trainingCount:]
-	y_test = y_set[trainingCount:]
+	X_train = np.array(X_regressor[:4800])
+	y_train = np.array(y_regressor[:4800])
+	X_test = np.array(X_regressor[trainingCount:])
+	y_test = np.array(y_regressor[trainingCount:])
 	
-	model = trainRNNRegressor(X_train, y_train)'''
+	
+	model = trainRNNRegressor(X_train, y_train)
 
-	#X_data = np.array(([[[1],[2]],[[1],[2],[3]],[[1],[2],[3],[5]],[[1],[2],[3],[5],[8]]]))
+	'''#X_data = np.array(([[[1],[2]],[[1],[2],[3]],[[1],[2],[3],[5]],[[1],[2],[3],[5],[8]]]))
 	#y_data = [3,5,8,13]
 	
 	X_data = np.array([[[1,1],[2,1.5],[3,2.5],[5,4]],[[2,1.5],[3,2.5],[5,4],[8,6.5]],[[3,2.5],[5,4],[8,6.5],[13,10.5]],[[5,4],[8,6.5],[13,10.5],[21,17]]])
@@ -536,11 +551,17 @@ def preprocessRNNRegressor(paramvector):
 	
 	ytest = model.predict(testx)
 	print('Output of regressor:')
+	print(ytest)'''
+	ytest = model.predict(np.reshape(X_test[20],(1,19,5)))
+	print('Input to reg')
+	print(X_test[20])
+	print('Output of regressor:')
 	print(ytest)
-
+	print('Real output')
+	print(y_test[20])
 
 #Used for the regressor problem that needs different labels
-def constructSyntheticDataPredictions(X_train):
+def constructSyntheticDataPredictions(X_train, shouldPadWithZeros):
 	X_seqtrain = []
 	y_seqtrain = []
 	for sequence in X_train:
@@ -548,8 +569,13 @@ def constructSyntheticDataPredictions(X_train):
 			temp_x = []
 			for j in range(i+1):
 				temp_x.append(sequence[j])
-			X_seqtrain.append(temp_x)
-			y_seqtrain.append(sequence[i+1])
+			if(shouldPadWithZeros == True):
+				X_padded = padSequenceWithZeros((len(sequence)-1),i,temp_x)
+				X_seqtrain.append(X_padded)
+				y_seqtrain.append(sequence[i+1])
+			else:
+				X_seqtrain.append(temp_x)
+				y_seqtrain.append(sequence[i+1])
 	
 	return X_seqtrain, y_seqtrain
 
@@ -568,4 +594,6 @@ for it in range(4):
 
 #preprocessRNNClassifier(paramvector)
 preprocessRNNRegressor(paramvector[0])
+
+
 
