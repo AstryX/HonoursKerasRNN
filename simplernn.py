@@ -11,6 +11,8 @@ from keras.layers import Flatten
 from keras.layers import TimeDistributed
 from keras.layers import Activation
 from keras.models import model_from_yaml
+from keras import backend
+import sklearn.metrics
 import matplotlib.pyplot as plt
 from scipy import stats
 import tensorflow as tf
@@ -113,7 +115,9 @@ def getExpUBP(i, reverse, offsetcoefficient):
 	else:
 		return expmajoritysteepness*pow(1.2, (i+1)) + 95 - (majorityelementrange*offsetcoefficient)
 	
-
+def rmse(y_real, y_pred):
+    return backend.sqrt(backend.mean(backend.square(y_pred - y_real), axis=-1))
+	
 def generateSyntheticData(drugType, curveType, dataQuantity, currentParameters, isIncreasing = False, isError = False):
 	if curveType == 'Linear' and drugType == 'NoDrug':
 		#Does it for 3 times
@@ -458,20 +462,7 @@ def preprocessRNNClassifier(paramVector):
 
 		syntheticDataset, labels = retrieveConcatenatedDrugData(curparamseq)
 		
-		lossarray,accarray = evaluateRNNClassifier(syntheticDataset, labels, 5);
-		
-		avgloss = sum(lossarray) / float(len(lossarray))
-		avgacc = sum(accarray) / float(len(accarray))
-		standiv = statistics.stdev(accarray)
-
-		print("Average Loss")
-		print(avgloss)
-		print("Average Acc")
-		print(avgacc)
-		print("SD of Acc")
-		print(standiv)
-
-		'''index = []
+		index = []
 		for i in range(20):
 			index.append(i+1)
 
@@ -486,15 +477,28 @@ def preprocessRNNClassifier(paramVector):
 		#plt.plot(index, hdllist, index, linear)
 		plt.plot(index, syntheticDataset[2800,:20,0], index, linear)
 		plt.xticks(index)
-		plt.ylabel('HDL levels')
+		plt.ylabel('Simulated HDL levels with noise')
 		plt.xlabel('NO of visit')
-		plt.axis([1, 20, 50, 100])
-		plt.show()'''
+		plt.axis([1, 20, 70, 110])
+		plt.show()
 		
-		plt.axis([0, 15, 0, 1])
+		lossarray,accarray = evaluateRNNClassifier(syntheticDataset, labels, 5);
+		
+		avgloss = sum(lossarray) / float(len(lossarray))
+		avgacc = sum(accarray) / float(len(accarray))
+		standiv = statistics.stdev(accarray)
+
+		print("Average Loss")
+		print(avgloss)
+		print("Average Acc")
+		print(avgacc)
+		print("SD of Acc")
+		print(standiv)
+		
+		'''plt.axis([0, 15, 0, 1])
 		plt.scatter(plotcounter, avgacc)
 		plt.pause(0.05)
-		plotcounter = plotcounter + 1
+		plotcounter = plotcounter + 1'''
 	plt.show()	
 	
 def trainRNNRegressor(X_train,y_train):
@@ -506,9 +510,9 @@ def trainRNNRegressor(X_train,y_train):
 	'''model.add(CuDNNLSTM(hiddenUnitCount, input_shape=(None, 2), return_sequences=True))'''
 	
 	model.add(Dense(numFeatures))
-	model.compile(optimizer='adam', loss='mae')
+	model.compile(optimizer='adam', loss="mean_squared_error", metrics=["mean_squared_error", rmse])
 	
-	model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=1, shuffle=False)
+	result = model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=1, shuffle=False)
 	
 	return model
 	
@@ -528,8 +532,8 @@ def preprocessRNNRegressor(paramvector):
 	
 	trainingCount = int(trainingRatio * len(X_regressor))
 	
-	X_train = np.array(X_regressor[:4800])
-	y_train = np.array(y_regressor[:4800])
+	X_train = np.array(X_regressor[:trainingCount])
+	y_train = np.array(y_regressor[:trainingCount])
 	X_test = np.array(X_regressor[trainingCount:])
 	y_test = np.array(y_regressor[trainingCount:])
 	
@@ -560,6 +564,11 @@ def preprocessRNNRegressor(paramvector):
 	print(ytest)
 	print('Real output')
 	print(y_test[20])
+	
+	y_predicted = model.predict(np.reshape(X_test, (len(X_test),19,5)))
+	
+	#print("Mean squared error (MSE):       %f" % sklearn.metrics.mean_squared_error(y_test,y_predicted))
+	print("Root mean squared error of test set(RMSE): %f" % math.sqrt(sklearn.metrics.mean_squared_error(y_test,y_predicted)))
 	
 	# serialize model to YAML
 	model_yaml = model.to_yaml()
