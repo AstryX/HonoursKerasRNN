@@ -1,0 +1,34 @@
+{
+    "numFeatures":5,
+	
+	"numLinearData":1500,
+	"numExponentialDecreasing":675,
+	"numExponentialDecreasingFalse":75,
+	"numExponentialIncreasing":675,
+	"numExponentialIncreasingFalse":75,
+
+	"hdl_value":80,
+	"ldl_value":80,
+	"trigs_value":130,
+	"hba1c_value":4,
+	"ubp_value":105,
+
+	"hdlconst":8,
+	"ldlconst":8,
+	"trigsconst":13,
+	"hba1cconst":0.4,
+	"ubpconst":10.5,
+
+	"majorityelementrange":20,
+	"minorityelementrange":2,
+
+	"majoritylineardisplacement":[-5, 0, 5],
+	"minoritylineardisplacement":[-0.5, 0, 0.5],
+
+	"expmajoritysteepness":0.5,
+	"expminoritysteepness":0.3,
+
+	"initialexpshift":0.5,
+
+	"perturbationincrement":0.25
+}

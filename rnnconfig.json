@@ -1,0 +1,7 @@
+{
+	"epochCount":100,
+	"batchSize":128,
+	"hiddenUnitCount":32,
+	"trainingRatio":0.8,
+	"numFeatures":5	
+}
