@@ -211,6 +211,18 @@ def preprocessRNNRegressor(paramvector, dataGen):
 	model.save_weights("model.h5")
 	print("Successfully saved the model.")
 
+def loadRNNModel(path):
+
+	# load the YAML and read the model from it
+	yamlModel = open(path, 'r')
+	readModel = yamlModel.read()
+	yamlModel.close()
+	loadedModel = model_from_yaml(readModel)
+	# load the read weights into a model
+	loadedModel.load_weights("model.h5")
+
+	return loadedModel
+	
 epochCount = 100
 batchSize = 128
 hiddenUnitCount = 32
@@ -236,13 +248,5 @@ if len(sys.argv) > 2:
 	#preprocessRNNClassifier(paramvector, dataGenerator)
 	preprocessRNNRegressor(paramvector[0], dataGenerator)
 
-
-	'''# load YAML and create model
-	yaml_file = open('model.yaml', 'r')
-	loaded_model_yaml = yaml_file.read()
-	yaml_file.close()
-	loaded_model = model_from_yaml(loaded_model_yaml)
-	# load weights into new model
-	loaded_model.load_weights("model.h5")'''
 else:
 	print("Did not provide sufficient arguments! Try running python ProcessRNN.py \"rnnconfig.json\" \"paramconfig.json\"")
