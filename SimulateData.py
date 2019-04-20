@@ -2,6 +2,10 @@
 #Robertas Dereskevicius 2019/03 University of Dundee
 import numpy as np
 import json
+from scipy import stats
+import sys
+import statistics
+import matplotlib.pyplot as plt
 
 def getQuadHDL(i):
 	return pow(0.5*((i+1) - 10), 2) + 70
@@ -66,38 +70,38 @@ class DataGenerator:
 			myObject.perturbationincrement = data['perturbationincrement']			
 		
 
-	def getExpHDL(myObject, i, reverse, offsetcoefficient):
+	def getExpHDL(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2, (i+1)) + 70 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2, (i+1)) + 70 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 - (myObject.majorityelementrange*offsetcoefficient)
 		
 
 	#Similar boundaries as hdl
 		
-	def getExpLDL(myObject, i, reverse, offsetcoefficient):
+	def getExpLDL(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2, (i+1)) + 70 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2, (i+1)) + 70 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 - (myObject.majorityelementrange*offsetcoefficient)
 
-	def getExpTRIGS(myObject, i, reverse, offsetcoefficient):
+	def getExpTRIGS(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2, (i+1)) + 120 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 120 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2, (i+1)) + 120 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 120 - (myObject.majorityelementrange*offsetcoefficient)
 
-	def getExpHBA1C(myObject, i, reverse, offsetcoefficient):
+	def getExpHBA1C(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expminoritysteepness*pow(1.2, (i+1) - 10) + 3 + myObject.minorityelementrange + (myObject.minorityelementrange*offsetcoefficient)
+			return -myObject.expminoritysteepness*pow(1.2 - steepnesParam, (i+1) - 10) + 3 + myObject.minorityelementrange + (myObject.minorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expminoritysteepness*pow(1.2, (i+1) - 10) + 3 - (myObject.minorityelementrange*offsetcoefficient)
+			return myObject.expminoritysteepness*pow(1.2 - steepnesParam, (i+1) - 10) + 3 - (myObject.minorityelementrange*offsetcoefficient)
 
-	def getExpUBP(myObject, i, reverse, offsetcoefficient):
+	def getExpUBP(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2, (i+1)) + 95 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 95 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2, (i+1)) + 95 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 95 - (myObject.majorityelementrange*offsetcoefficient)
 		
 		
 	def generateSyntheticData(myObject, drugType, curveType, dataQuantity, currentParameters, isIncreasing = False, isError = False):
@@ -173,12 +177,12 @@ class DataGenerator:
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
-							hdl_value_quad = myObject.getExpHDL(i,isReverse,currentParameters[0][1])
-							ldl_value_quad = myObject.getExpLDL(i,isReverse,currentParameters[1][1])
-							trigs_value_quad = myObject.getExpTRIGS(i,isReverse,currentParameters[2][1])
-							hba1c_value_quad = myObject.getExpHBA1C(i,isReverse,currentParameters[3][1])
-							ubp_value_quad = myObject.getExpUBP(i,isReverse,currentParameters[4][1])
-							perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
+							hdl_value_quad = myObject.getExpHDL(i,isReverse,currentParameters[0][1],currentParameters[0][2])
+							ldl_value_quad = myObject.getExpLDL(i,isReverse,currentParameters[1][1],currentParameters[1][2])
+							trigs_value_quad = myObject.getExpTRIGS(i,isReverse,currentParameters[2][1],currentParameters[2][2])
+							hba1c_value_quad = myObject.getExpHBA1C(i,isReverse,currentParameters[3][1],currentParameters[3][2])
+							ubp_value_quad = myObject.getExpUBP(i,isReverse,currentParameters[4][1],currentParameters[4][2])
+							perturbed_hdl_value = hdl_value_quad + positionalMajorityShift
 							perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
 							perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
 							perturbed_hba1c_value = hba1c_value_quad + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
@@ -190,6 +194,25 @@ class DataGenerator:
 							newseq[i][4] = perturbed_ubp_value
 						y_generated[j] = 3
 						X_generated[j] = newseq	
+						'''index = []
+						for i in range(20):
+							index.append(i+1)
+
+						#slope, intercept, r_value, p_value, std_err = stats.linregress(index,hdllist)
+						slope, intercept, r_value, p_value, std_err = stats.linregress(index,newseq[:20,0])
+
+						linear = []	
+						for i in range(20):
+							linear.append(slope * index[i] + intercept)
+							
+							
+						#plt.plot(index, hdllist, index, linear)
+						plt.plot(index, newseq[:20,0], index, linear)
+						plt.xticks(index)
+						plt.ylabel('Simulated HDL levels with noise')
+						plt.xlabel('NO of visit')
+						plt.axis([1, 20, 50, 120])
+						plt.show()'''
 			
 			elif drugType == 'Drug1':
 				if isError == True:
@@ -233,8 +256,8 @@ class DataGenerator:
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
-							hdl_value_quad = myObject.getExpHDL(i,isReverse,currentParameters[0][1])
-							ldl_value_quad = myObject.getExpLDL(i,isReverse,currentParameters[1][1])
+							hdl_value_quad = myObject.getExpHDL(i,isReverse,currentParameters[0][1],currentParameters[0][2])
+							ldl_value_quad = myObject.getExpLDL(i,isReverse,currentParameters[1][1],currentParameters[1][2])
 							perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
 							perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
 							perturbed_trigs_value = myObject.trigs_value + ( np.random.normal(0,1) ) * currentParameters[2][0]
@@ -289,9 +312,9 @@ class DataGenerator:
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
-							trigs_value_quad = myObject.getExpTRIGS(i,isReverse,currentParameters[2][1])
-							hba1c_value_quad = myObject.getExpHBA1C(i,isReverse,currentParameters[3][1])
-							ubp_value_quad = myObject.getExpUBP(i,isReverse,currentParameters[4][1])
+							trigs_value_quad = myObject.getExpTRIGS(i,isReverse,currentParameters[2][1],currentParameters[2][2])
+							hba1c_value_quad = myObject.getExpHBA1C(i,isReverse,currentParameters[3][1],currentParameters[3][2])
+							ubp_value_quad = myObject.getExpUBP(i,isReverse,currentParameters[4][1],currentParameters[4][2])
 							perturbed_hdl_value = myObject.hdl_value + ( np.random.normal(0,1) ) * currentParameters[0][0]
 							perturbed_ldl_value = myObject.ldl_value + ( np.random.normal(0,1) ) * currentParameters[1][0]
 							perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
@@ -373,8 +396,34 @@ class DataGenerator:
 		
 		return syntheticDataset, labels
 
+	def splitToMiniBatches(myObject, X_set, y_set, miniBatchSize = 32):
+		
+		finishedBatchesX = []
+		finishedBatchesY = []
+		
+		tempBatchesX = []
+		tempBatchesY = []
+		
+		for i in range(19):
+			tempBatchesX.append([])
+			tempBatchesY.append([])
+			
+		for i in range(len(X_set)):
+			sizeIndex = len(X_set[i])-1
+			tempBatchesX[sizeIndex].append(X_set[i])
+			tempBatchesY[sizeIndex].append(y_set[i])
+			
+			if len(tempBatchesX[sizeIndex]) == miniBatchSize:
+				finishedBatchesX.append(tempBatchesX[sizeIndex])
+				finishedBatchesY.append(tempBatchesY[sizeIndex])
+				
+				tempBatchesX[sizeIndex] = []
+				tempBatchesY[sizeIndex] = []
+		
+		return finishedBatchesX, finishedBatchesY
+		
 	#Used for the regressor problem that needs different labels
-	def constructSyntheticDataPredictions(myObject, X_train, shouldPadWithZeros):
+	def constructSyntheticDataPredictions(myObject, X_train, shouldPadWithZeros, shouldCreateMiniBatches = False, miniBatchSize = 32):
 		X_seqtrain = []
 		y_seqtrain = []
 		for sequence in X_train:
@@ -390,6 +439,9 @@ class DataGenerator:
 					X_seqtrain.append(temp_x)
 					y_seqtrain.append(sequence[i+1])
 		
+		if shouldCreateMiniBatches == True:
+			X_seqtrain, y_seqtrain = myObject.splitToMiniBatches(X_seqtrain, y_seqtrain, miniBatchSize)
+		
 		return X_seqtrain, y_seqtrain
 
 	def createParamVector(myObject, paramLen):
@@ -398,11 +450,11 @@ class DataGenerator:
 		for it in range(paramLen):
 			paramseq = []
 
-			paramseq.append([ myObject.hdlconst * (myObject.perturbationincrement * (it+1)), it * 0.25 ] )
-			paramseq.append([ myObject.ldlconst * (myObject.perturbationincrement * (it+1)), it * 0.25 ] )
-			paramseq.append([ myObject.trigsconst * (myObject.perturbationincrement * (it+1)), it * 0.25 ] )
-			paramseq.append([ myObject.hba1cconst * (myObject.perturbationincrement * (it+1)), it * 0.25 ] )
-			paramseq.append([ myObject.ubpconst * (myObject.perturbationincrement * (it+1)), it * 0.25 ] )
+			paramseq.append([ myObject.hdlconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
+			paramseq.append([ myObject.ldlconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
+			paramseq.append([ myObject.trigsconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
+			paramseq.append([ myObject.hba1cconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
+			paramseq.append([ myObject.ubpconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
 
 			paramvector.append(paramseq)
 		
