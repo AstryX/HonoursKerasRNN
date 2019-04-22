@@ -30,7 +30,7 @@ class DataGenerator:
 		
 			data = json.load(json_data_file)
 			
-			myObject.numFeatures = data['numFeatures']
+			myObject.numFeatures = 5
 			
 			#Multiple of 3
 			myObject.numLinearData = data['numLinearData']
@@ -66,9 +66,12 @@ class DataGenerator:
 			myObject.expmajoritysteepness = data['expmajoritysteepness']
 			myObject.expminoritysteepness = data['expminoritysteepness']
 			
-			myObject.initialexpshift = data['initialexpshift']
-			myObject.perturbationincrement = data['perturbationincrement']			
-		
+			myObject.initialexpshift = data['initialexpshift']	
+
+			myObject.sequencelenstart = data['sequencelenstart']
+			myObject.sequencelenend = data['sequencelenend']
+			
+			myObject.paramconfig = data['paramconfig']
 
 	def getExpHDL(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
@@ -182,7 +185,7 @@ class DataGenerator:
 							trigs_value_quad = myObject.getExpTRIGS(i,isReverse,currentParameters[2][1],currentParameters[2][2])
 							hba1c_value_quad = myObject.getExpHBA1C(i,isReverse,currentParameters[3][1],currentParameters[3][2])
 							ubp_value_quad = myObject.getExpUBP(i,isReverse,currentParameters[4][1],currentParameters[4][2])
-							perturbed_hdl_value = hdl_value_quad + positionalMajorityShift
+							perturbed_hdl_value = hdl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[0][0]
 							perturbed_ldl_value = ldl_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[1][0]
 							perturbed_trigs_value = trigs_value_quad + positionalMajorityShift + ( np.random.normal(0,1) ) * currentParameters[2][0]
 							perturbed_hba1c_value = hba1c_value_quad + positionalMinorityShift + ( np.random.normal(0,1) ) * currentParameters[3][0]
@@ -427,7 +430,7 @@ class DataGenerator:
 		X_seqtrain = []
 		y_seqtrain = []
 		for sequence in X_train:
-			for i in range(len(sequence)-1):
+			for i in range(myObject.sequencelenstart,myObject.sequencelenend):
 				temp_x = []
 				for j in range(i+1):
 					temp_x.append(sequence[j])
@@ -444,17 +447,17 @@ class DataGenerator:
 		
 		return X_seqtrain, y_seqtrain
 
-	def createParamVector(myObject, paramLen):
+	def createParamVector(myObject):
 		paramvector = []
 
-		for it in range(paramLen):
+		for it in myObject.paramconfig:
 			paramseq = []
 
-			paramseq.append([ myObject.hdlconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
-			paramseq.append([ myObject.ldlconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
-			paramseq.append([ myObject.trigsconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
-			paramseq.append([ myObject.hba1cconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
-			paramseq.append([ myObject.ubpconst * (myObject.perturbationincrement * (it+1)), it * 0.25, it * 0.03 ] )
+			paramseq.append([ myObject.hdlconst * it[0], it[1], it[2] ] )
+			paramseq.append([ myObject.ldlconst * it[0], it[1], it[2] ] )
+			paramseq.append([ myObject.trigsconst * it[0], it[1], it[2] ] )
+			paramseq.append([ myObject.hba1cconst * it[0], it[1], it[2] ] )
+			paramseq.append([ myObject.ubpconst * it[0], it[1], it[2] ] )
 
 			paramvector.append(paramseq)
 		

@@ -1,6 +1,4 @@
 {
-    "numFeatures":5,
-	
 	"numLinearData":1500,
 	"numExponentialDecreasing":675,
 	"numExponentialDecreasingFalse":75,
@@ -29,6 +27,10 @@
 	"expminoritysteepness":0.3,
 
 	"initialexpshift":0.5,
-
-	"perturbationincrement":0.25
+	
+	"sequencelenstart":12,
+	"sequencelenend":17,
+	
+	"paramconfig":[[0.25,0,0],[0.5,-0.45,0.03],[0.75,-0.6,0.06]]
+	
 }

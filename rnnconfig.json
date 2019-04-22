@@ -1,7 +1,9 @@
 {
-	"epochCount":100,
+	"epochCount":200,
 	"batchSize":128,
 	"hiddenUnitCount":32,
 	"trainingRatio":0.8,
-	"numFeatures":5	
+	"foldCount":100,
+	"useMiniBatch":true,
+	"useZeroPadding":false
 }
