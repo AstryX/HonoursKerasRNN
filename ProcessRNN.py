@@ -24,14 +24,17 @@ import statistics
 import time
 
 class DynamicPlot(Callback):
-	def __init__(self, title, ylabel):
+	def __init__(self, title, ylabel, title2 = '', ylabel2 = ''):
 		self.dataTitle = title
 		self.yLabel = ylabel
+		self.dataTitle2 = title2
+		self.yLabel2 = ylabel2
 	
 	def on_train_begin(self, history={}):
 		self.iterator = 1
 		self.epoch = []
 		self.rmse = []
+		self.metric2 = []
 		plt.close()
 		self.fig = plt.figure()
 		self.history = []
@@ -40,19 +43,28 @@ class DynamicPlot(Callback):
 		self.history.append(history)
 		self.epoch.append(self.iterator)
 		self.rmse.append(history.get(self.dataTitle))
-		self.iterator += 1
+		if self.dataTitle2 != '':
+			self.metric2.append(history.get(self.dataTitle2))
+		
 			
 		#clear_output(wait=True)
 		#plt.plot(self.epoch, self.rmse, label="Root Mean Squared Error")
-		plt.plot(self.epoch, self.rmse)
+		plt.plot(self.epoch, self.rmse, 'g', label = self.yLabel)
+		if self.dataTitle2 != '':
+			plt.plot(self.epoch, self.metric2, 'r', label = self.yLabel2)
+			
+		if self.iterator == 1:
+			plt.legend()
 		plt.ion()
 		#plt.legend()
-		plt.ylabel(self.yLabel)
+		plt.ylabel('Metrics')
 		plt.xlabel('Epoch')
 		#plt.axis([0, epochCount, 0, self.rmse[0]])
 		
+		self.iterator += 1
+		
 		plt.show();
-		plt.pause(0.001)
+		plt.pause(0.001)	
 
 def rmse(y_real, y_pred):
     return backend.sqrt(backend.mean(backend.square(y_pred - y_real), axis=-1))
@@ -64,16 +76,13 @@ def trainRNNClassifier(X_train,y_train):
 	model.add(Dense(hiddenUnitCount, input_shape=(numTimesteps,numFeatures)))
 	model.add(CuDNNLSTM(hiddenUnitCount, return_sequences=True))
 	model.add(CuDNNLSTM(hiddenUnitCount))
-	#model.add(Flatten())
 	model.add(Dense(4, activation='softmax'))
 	#model.add(TimeDistributed(Dense(1, activation='sigmoid')))
-	#model.add(CuDNNLSTM(4, return_sequences=False))
-	#model.add(Activation('sigmoid'))
 	model.compile(loss='sparse_categorical_crossentropy',
             metrics=['sparse_categorical_accuracy'],
 			optimizer='adam')
 	
-	plotCallback = DynamicPlot('sparse_categorical_accuracy','Sparse Categorical Accuracy')
+	plotCallback = DynamicPlot('sparse_categorical_accuracy','Sparse Categorical Accuracy', 'loss', 'Loss')
 	
 	model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
 	
@@ -115,11 +124,9 @@ def testRNNClassifier(X_set, y_set, folds):
 
 		conf_matrix = confusion_matrix((y_test.astype(int)), y_New)
 		print(conf_matrix)
-		#-----------------------------------print(model.metrics_names)
+		#print(model.metrics_names)
 		
 		print(scores)
-		#print(predictedValues[0])
-		#print("Param nr:"+str(plotcounter)+"; Fold nr:" + str(fold))
 		lossarray.append(scores[0])
 		accarray.append(scores[1])
 		confarray.append(conf_matrix)
@@ -251,7 +258,7 @@ def trainRNNRegressor(X_train,y_train,epochSteps):
 	model.add(Dense(numFeatures))
 	model.compile(optimizer='adam', loss="mean_squared_error", metrics=["mean_squared_error", rmse])
 	
-	plotCallback = DynamicPlot('rmse','Root Mean Squared Error')
+	plotCallback = DynamicPlot('rmse','Root Mean Squared Error','mean_squared_error','Mean Squared Error')
 	
 	result = model.fit_generator(variableSizeGenerator(X_train, y_train), steps_per_epoch=epochSteps, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
 	
@@ -367,6 +374,8 @@ def mainRNNRegressor(paramvector, dataGen):
 
 	for curparamseq in paramvector:
 	
+		start_t = time.time()
+	
 		syntheticDataset, labels = dataGen.retrieveConcatenatedDrugData(curparamseq)
 	
 		X_regressor,y_regressor = dataGen.constructSyntheticDataPredictions(syntheticDataset, shouldRNNUseZeroPadding, shouldRNNUseMiniBatch, batchSize)
@@ -385,6 +394,8 @@ def mainRNNRegressor(paramvector, dataGen):
 			openType = 'w'
 		else:
 			openType = 'a'
+		
+		elapsed_t = time.time() - start_t
 		
 		with open('RegressionResults.txt', openType) as f:
 			f.write("------------------------------------------\n")
@@ -426,6 +437,8 @@ foldCount = 10
 numTimesteps = 20
 shouldRNNUseMiniBatch = True
 shouldRNNUseZeroPadding = False
+isClassifierEnabled = True
+isRegressorEnabled = False
 	
 if len(sys.argv) > 2:
 
@@ -439,13 +452,22 @@ if len(sys.argv) > 2:
 		foldCount = data['foldCount']
 		shouldRNNUseMiniBatch = data['useMiniBatch']
 		shouldRNNUseZeroPadding = data['useZeroPadding']
+		isClassifierEnabled = data['classifierEnabled']
+		isRegressorEnabled = data['regressorEnabled']
 
 	#RNN params 
 	dataGenerator = SimulateData.DataGenerator(sys.argv[2])
 
 	globalParamVector = dataGenerator.createParamVector()	
-	mainRNNClassifier(globalParamVector, dataGenerator)
-	#mainRNNRegressor(globalParamVector, dataGenerator)
+	
+	if(isClassifierEnabled == True):
+		mainRNNClassifier(globalParamVector, dataGenerator)
+		
+	if(isRegressorEnabled == True):
+		mainRNNRegressor(globalParamVector, dataGenerator)
+		
+	if(isClassifierEnabled == False and isRegressorEnabled == False):
+		print('Classifier and regressor have been disabled. No neural network operations could be performed. Change the RNN parameter settings.')
 
 else:
 	print("Did not provide sufficient arguments! Try running python ProcessRNN.py \"rnnconfig.json\" \"paramconfig.json\"")
