@@ -5,10 +5,10 @@
 	"numExponentialIncreasing":675,
 	"numExponentialIncreasingFalse":75,
 
-	"hdl_value":80,
-	"ldl_value":80,
-	"trigs_value":130,
-	"hba1c_value":4,
+	"hdl_value":50,
+	"ldl_value":150,
+	"trigs_value":190,
+	"hba1c_value":5,
 	"ubp_value":105,
 
 	"hdlconst":8,

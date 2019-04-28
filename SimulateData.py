@@ -1,30 +1,15 @@
-#RNN Classifier for multi-variable synthetic data set classification and prediction for the Honours Project
+#Data simulation class that generates different biomarkers for varying sequences of different classes for both classification and regression problems, for the Honours Project
 #Robertas Dereskevicius 2019/03 University of Dundee
 import numpy as np
 import json
 from scipy import stats
 import sys
 import statistics
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt	
 
-def getQuadHDL(i):
-	return pow(0.5*((i+1) - 10), 2) + 70
-
-#Similar boundaries as hdl
-	
-def getQuadLDL(i):
-	return pow(0.5*((i+1) - 10), 2) + 70
-
-def getQuadTRIGS(i):
-	return pow(0.5*((i+1) - 10), 2) + 120
-
-def getQuadHBA1C(i):
-	return pow(0.15*((i+1) - 10), 2) + 3
-
-def getQuadUBP(i):
-	return pow(0.5*((i+1 )- 10), 2) + 95	
-
+#Stored data simulation functions within a class that can be instantiated with a parameter file name
 class DataGenerator:
+#Constructor with initial values that are defined in the formulae and manual docs
 	def __init__(myObject, fileName):
 		with open(fileName) as json_data_file:
 		
@@ -32,10 +17,8 @@ class DataGenerator:
 			
 			myObject.numFeatures = 5
 			
-			#Multiple of 3
+			#Multiple of len of majoritylineardisplacement length
 			myObject.numLinearData = data['numLinearData']
-			
-			myObject.numLinearDataSingle = int(myObject.numLinearData / 3)
 			
 			myObject.numExponentialDecreasing = data['numExponentialDecreasing']
 			myObject.numExponentialDecreasingFalse = data['numExponentialDecreasingFalse']
@@ -63,6 +46,8 @@ class DataGenerator:
 			myObject.majoritylineardisplacement = data['majoritylineardisplacement']
 			myObject.minoritylineardisplacement = data['minoritylineardisplacement']
 			
+			myObject.numLinearDataSingle = int(myObject.numLinearData / len(majoritylineardisplacement))
+			
 			myObject.expmajoritysteepness = data['expmajoritysteepness']
 			myObject.expminoritysteepness = data['expminoritysteepness']
 			
@@ -73,50 +58,53 @@ class DataGenerator:
 			
 			myObject.paramconfig = data['paramconfig']
 
+	#Formula used for calculating HDL exponential curve time steps
 	def getExpHDL(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.hdl_value - (myObject.majorityelementrange / 2)) + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.hdl_value - (myObject.majorityelementrange / 2)) - (myObject.majorityelementrange*offsetcoefficient)
 		
-
-	#Similar boundaries as hdl
-		
+	#Formula used for calculating LDL exponential curve time steps
 	def getExpLDL(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.ldl_value - (myObject.majorityelementrange / 2)) + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 70 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.ldl_value - (myObject.majorityelementrange / 2)) - (myObject.majorityelementrange*offsetcoefficient)
 
+	#Formula used for calculating TRIGS exponential curve time steps
 	def getExpTRIGS(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 120 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.trigs_value - (myObject.majorityelementrange / 2)) + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 120 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.trigs_value - (myObject.majorityelementrange / 2)) - (myObject.majorityelementrange*offsetcoefficient)
 
+	#Formula used for calculating hbA1c exponential curve time steps
 	def getExpHBA1C(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expminoritysteepness*pow(1.2 - steepnesParam, (i+1) - 10) + 3 + myObject.minorityelementrange + (myObject.minorityelementrange*offsetcoefficient)
+			return -myObject.expminoritysteepness*pow(1.2 - steepnesParam, (i+1) - 10) + (myObject.hba1c_value - (myObject.minorityelementrange / 2)) + myObject.minorityelementrange + (myObject.minorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expminoritysteepness*pow(1.2 - steepnesParam, (i+1) - 10) + 3 - (myObject.minorityelementrange*offsetcoefficient)
+			return myObject.expminoritysteepness*pow(1.2 - steepnesParam, (i+1) - 10) + (myObject.hba1c_value - (myObject.minorityelementrange / 2)) - (myObject.minorityelementrange*offsetcoefficient)
 
+	#Formula used for calculating systolic blood pressure exponential curve time steps
 	def getExpUBP(myObject, i, reverse, offsetcoefficient, steepnesParam):
 		if reverse == 1:
-			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 95 + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
+			return -myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.ubp_value - (myObject.majorityelementrange / 2)) + myObject.majorityelementrange + (myObject.majorityelementrange*offsetcoefficient)
 		else:
-			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + 95 - (myObject.majorityelementrange*offsetcoefficient)
+			return myObject.expmajoritysteepness*pow(1.2 - steepnesParam, (i+1)) + (myObject.ubp_value - (myObject.majorityelementrange / 2)) - (myObject.majorityelementrange*offsetcoefficient)
 		
-		
+	#Primary data simulation function
 	def generateSyntheticData(myObject, drugType, curveType, dataQuantity, currentParameters, isIncreasing = False, isError = False):
 		if curveType == 'Linear' and drugType == 'NoDrug':
-			#Does it for 3 times
 			displacement = 0
 			X_generated = np.zeros((int(dataQuantity * len(myObject.majoritylineardisplacement)),20,myObject.numFeatures))	
 			y_generated = np.zeros((int(dataQuantity * len(myObject.majoritylineardisplacement))))
+			#Data is slightly perturbed for each NoDrug patient to add variety
 			for k in range(len(myObject.majoritylineardisplacement)):
 				for j in range(dataQuantity):
 					newseq = np.zeros((20,myObject.numFeatures))
 					for i in range(20):
+						#Linear baseline with linear displacement and perturbations
 						perturbed_hdl_value = myObject.hdl_value + myObject.majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[0][0]
 						perturbed_ldl_value = myObject.ldl_value + myObject.majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[1][0]
 						perturbed_trigs_value = myObject.trigs_value + myObject.majoritylineardisplacement[k] + ( np.random.normal(0,1) ) * currentParameters[2][0]
@@ -137,18 +125,19 @@ class DataGenerator:
 		elif curveType == 'Exponential':
 			X_generated = np.zeros((dataQuantity,20,myObject.numFeatures))	
 			y_generated = np.zeros((dataQuantity))
-			
+			#Both drugs mean that all 5 biomarkers are out of ranges
 			if drugType == 'Drug1Drug2':
+				#Error in this case means patient has no reponse to drugs
 				if isError == True:
 					positionalMajorityShift = 0
 					positionalMinorityShift = 0
+					#Increasing in this case means that the biomarkers should be below the range
 					if isIncreasing == True:
 						positionalMajorityShift = -(myObject.majorityelementrange)
 						positionalMinorityShift = -(myObject.minorityelementrange)
 					elif isIncreasing == False:
 						positionalMajorityShift = myObject.majorityelementrange
 						positionalMinorityShift = myObject.minorityelementrange
-					#no response
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
@@ -164,10 +153,12 @@ class DataGenerator:
 							newseq[i][4] = perturbed_ubp_value
 						y_generated[j] = 3
 						X_generated[j] = newseq
+				#If drug has a response
 				elif isError == False:
 					isReverse = -1
 					positionalMajorityShift = 0
 					positionalMinorityShift = 0
+					#Defines initial offsets based on the direction the curve is going
 					if isIncreasing == True:
 						isReverse = 0
 						positionalMajorityShift = -(myObject.initialexpshift * myObject.majorityelementrange)
@@ -176,7 +167,6 @@ class DataGenerator:
 						isReverse = 1
 						positionalMajorityShift = (myObject.initialexpshift * myObject.majorityelementrange)
 						positionalMinorityShift = (myObject.initialexpshift * myObject.minorityelementrange)
-					#Quadratic increasing with response
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
@@ -197,26 +187,7 @@ class DataGenerator:
 							newseq[i][4] = perturbed_ubp_value
 						y_generated[j] = 3
 						X_generated[j] = newseq	
-						'''index = []
-						for i in range(20):
-							index.append(i+1)
-
-						#slope, intercept, r_value, p_value, std_err = stats.linregress(index,hdllist)
-						slope, intercept, r_value, p_value, std_err = stats.linregress(index,newseq[:20,0])
-
-						linear = []	
-						for i in range(20):
-							linear.append(slope * index[i] + intercept)
-							
-							
-						#plt.plot(index, hdllist, index, linear)
-						plt.plot(index, newseq[:20,0], index, linear)
-						plt.xticks(index)
-						plt.ylabel('Simulated HDL levels with noise')
-						plt.xlabel('NO of visit')
-						plt.axis([1, 20, 50, 120])
-						plt.show()'''
-			
+			#First two biomarkers are out of range
 			elif drugType == 'Drug1':
 				if isError == True:
 					positionalMajorityShift = 0
@@ -227,7 +198,6 @@ class DataGenerator:
 					elif isIncreasing == False:
 						positionalMajorityShift = myObject.majorityelementrange
 						positionalMinorityShift = myObject.minorityelementrange
-					#no response
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
@@ -255,7 +225,6 @@ class DataGenerator:
 						isReverse = 1
 						positionalMajorityShift = (myObject.initialexpshift * myObject.majorityelementrange)
 						positionalMinorityShift = (myObject.initialexpshift * myObject.minorityelementrange)
-					#Quadratic increasing with response
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
@@ -272,7 +241,8 @@ class DataGenerator:
 							newseq[i][3] = perturbed_hba1c_value
 							newseq[i][4] = perturbed_ubp_value
 						y_generated[j] = 1
-						X_generated[j] = newseq				
+						X_generated[j] = newseq		
+			#Last 3 biomarkers are out of range
 			elif drugType == 'Drug2':
 				if isError == True:
 					positionalMajorityShift = 0
@@ -283,7 +253,6 @@ class DataGenerator:
 					elif isIncreasing == False:
 						positionalMajorityShift = myObject.majorityelementrange
 						positionalMinorityShift = myObject.minorityelementrange
-					#no response
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
@@ -311,7 +280,6 @@ class DataGenerator:
 						isReverse = 1
 						positionalMajorityShift = (myObject.initialexpshift * myObject.majorityelementrange)
 						positionalMinorityShift = (myObject.initialexpshift * myObject.minorityelementrange)
-					#Quadratic increasing with response
 					for j in range(dataQuantity):
 						newseq = np.zeros((20,myObject.numFeatures))
 						for i in range(20):
@@ -334,6 +302,7 @@ class DataGenerator:
 			
 		return None,None
 		
+	#Function that pads a sequence with zeros until it is of length timesteps - 1. Used for regression to make sequences of equal length.
 	def padSequenceWithZeros(myObject, totalLen, curStep, dataToPad):
 		X_padded = []
 		for pad in range(totalLen - curStep - 1):
@@ -344,6 +313,7 @@ class DataGenerator:
 		X_padded.extend(dataToPad)	
 		return X_padded
 		
+	#Function that concatenates many results for different classes and data simulation edge-cases
 	def retrieveConcatenatedDrugData(myObject, curparamseq):
 		tempX, tempY = myObject.generateSyntheticData('NoDrug', 'Linear', myObject.numLinearDataSingle, curparamseq)
 		syntheticDataset = tempX
@@ -399,6 +369,7 @@ class DataGenerator:
 		
 		return syntheticDataset, labels
 
+	#Function that orders and splits data objects into mini-batches of sequences with same length in a data set of varying lengths
 	def splitToMiniBatches(myObject, X_set, y_set, miniBatchSize = 32):
 		
 		finishedBatchesX = []
@@ -425,7 +396,7 @@ class DataGenerator:
 		
 		return finishedBatchesX, finishedBatchesY
 		
-	#Used for the regressor problem that needs different labels
+	#Used for the regressor problem that needs different labels (next time step biomarkers)
 	def constructSyntheticDataPredictions(myObject, X_train, shouldPadWithZeros, shouldCreateMiniBatches = False, miniBatchSize = 32):
 		X_seqtrain = []
 		y_seqtrain = []
@@ -447,6 +418,7 @@ class DataGenerator:
 		
 		return X_seqtrain, y_seqtrain
 
+	#Simple function used to load and create the parameter vector of varying difficulties
 	def createParamVector(myObject):
 		paramvector = []
 

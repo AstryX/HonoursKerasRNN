@@ -82,18 +82,21 @@ def trainRNNClassifier(X_train,y_train):
             metrics=['sparse_categorical_accuracy'],
 			optimizer='adam')
 	
-	plotCallback = DynamicPlot('sparse_categorical_accuracy','Sparse Categorical Accuracy', 'loss', 'Loss')
-	
-	model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
-	
+	if shouldShowGraph == True:
+		plotCallback = DynamicPlot('sparse_categorical_accuracy','Sparse Categorical Accuracy', 'loss', 'Loss')
+		model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
+	else:
+		model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=0, shuffle=False)
 	return model
 	
-def testRNNClassifier(X_set, y_set, folds):
+def testRNNClassifier(X_set, y_set, folds, paramCounter):
 	accarray = []
 	lossarray = []
 	confarray = []
 
 	for fold in range(folds):
+	
+		print('Fold count: %d' % fold)
 		rng_state = np.random.get_state()
 		np.random.shuffle(X_set)
 		np.random.set_state(rng_state)
@@ -131,6 +134,15 @@ def testRNNClassifier(X_set, y_set, folds):
 		accarray.append(scores[1])
 		confarray.append(conf_matrix)
 		
+	if shouldSaveModel == True:
+		# serialize model to YAML
+		model_yaml = model.to_yaml()
+		with open("modelclassifier"+str(paramCounter)+".yaml", "w") as yaml_file:
+			yaml_file.write(model_yaml)
+		# serialize weights to HDF5
+		model.save_weights("modelclassifier"+str(paramCounter)+".h5")
+		print("Successfully saved the model.")
+		
 	return lossarray,accarray,confarray
 	
 def mainRNNClassifier(paramVector, dataGen):
@@ -160,7 +172,7 @@ def mainRNNClassifier(paramVector, dataGen):
 		plt.axis([1, 20, 70, 110])
 		plt.show()'''
 		
-		lossarray,accarray,confarray = testRNNClassifier(syntheticDataset, labels, foldCount);
+		lossarray,accarray,confarray = testRNNClassifier(syntheticDataset, labels, foldCount, plotcounter);
 		
 		avgloss = sum(lossarray) / float(len(lossarray))
 		avgacc = sum(accarray) / float(len(accarray))
@@ -246,7 +258,7 @@ def variableSizeGenerator(X_train, y_train):
 		batch_it = batch_it + 1
 	
 
-def trainRNNRegressor(X_train,y_train,epochSteps):
+def trainRNNRegressor(X_train,y_train,epochSteps, shouldUseMini):
 
 	# create the model
 	model = Sequential()
@@ -258,17 +270,29 @@ def trainRNNRegressor(X_train,y_train,epochSteps):
 	model.add(Dense(numFeatures))
 	model.compile(optimizer='adam', loss="mean_squared_error", metrics=["mean_squared_error", rmse])
 	
-	plotCallback = DynamicPlot('rmse','Root Mean Squared Error','mean_squared_error','Mean Squared Error')
+	if shouldUseMini == True:
+		if shouldShowGraph == True:
+			plotCallback = DynamicPlot('rmse','Root Mean Squared Error','mean_squared_error','Mean Squared Error')
+			result = model.fit_generator(variableSizeGenerator(X_train, y_train), steps_per_epoch=epochSteps, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
+		else:
+			result = model.fit_generator(variableSizeGenerator(X_train, y_train), steps_per_epoch=epochSteps, epochs=epochCount, verbose=0, shuffle=False)
+	else:
+		if shouldShowGraph == True:
+			plotCallback = DynamicPlot('rmse','Root Mean Squared Error','mean_squared_error','Mean Squared Error')
+			result = model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
+		else:
+			result = model.fit(X_train, y_train, batch_size=batchSize, epochs=epochCount, verbose=0, shuffle=False)		
 	
-	result = model.fit_generator(variableSizeGenerator(X_train, y_train), steps_per_epoch=epochSteps, epochs=epochCount, callbacks=[plotCallback], verbose=0, shuffle=False)
+
 	
 	return model
 	
-def testRNNRegressor(X_regressor, y_regressor, folds, shouldRNNUseMiniBatch):
+def testRNNRegressor(X_regressor, y_regressor, folds, shouldRNNUseMiniBatch, paramCounter):
 	lossarray = []
 
 	for fold in range(folds):
 
+		print('Fold count: %d' % fold)
 		rng_state = np.random.get_state()
 		np.random.shuffle(X_regressor)
 		np.random.set_state(rng_state)
@@ -279,8 +303,6 @@ def testRNNRegressor(X_regressor, y_regressor, folds, shouldRNNUseMiniBatch):
 		if shouldRNNUseMiniBatch == True:
 			reconstructed_X = []
 			reconstructed_Y = []
-			
-			stepsPerEpoch = len(X_regressor)
 			
 			for i in range(len(X_regressor)):
 				reconstructed_X.extend(X_regressor[i])
@@ -294,6 +316,8 @@ def testRNNRegressor(X_regressor, y_regressor, folds, shouldRNNUseMiniBatch):
 			y_train = np.array(reconstructed_Y[:trainingCount])
 			X_test = np.array(reconstructed_X[trainingCount:])
 			y_test = np.array(reconstructed_Y[trainingCount:])
+			
+			stepsPerEpoch = int(len(X_train)/batchSize)
 		else:
 			trainingCount = int(trainingRatio * len(X_regressor))
 			
@@ -303,7 +327,7 @@ def testRNNRegressor(X_regressor, y_regressor, folds, shouldRNNUseMiniBatch):
 			y_test = np.array(y_regressor[trainingCount:])
 		
 		
-		model = trainRNNRegressor(X_train, y_train, stepsPerEpoch)
+		model = trainRNNRegressor(X_train, y_train, stepsPerEpoch, shouldRNNUseMiniBatch)
 
 		'''#X_data = np.array(([[[1],[2]],[[1],[2],[3]],[[1],[2],[3],[5]],[[1],[2],[3],[5],[8]]]))
 		#y_data = [3,5,8,13]
@@ -359,13 +383,14 @@ def testRNNRegressor(X_regressor, y_regressor, folds, shouldRNNUseMiniBatch):
 			
 			lossarray.append(finalRMSE)
 	
-	# serialize model to YAML
-	model_yaml = model.to_yaml()
-	with open("model.yaml", "w") as yaml_file:
-		yaml_file.write(model_yaml)
-	# serialize weights to HDF5
-	model.save_weights("model.h5")
-	print("Successfully saved the model.")
+	if shouldSaveModel == True:
+		# serialize model to YAML
+		model_yaml = model.to_yaml()
+		with open("modelregressor"+str(paramCounter)+".yaml", "w") as yaml_file:
+			yaml_file.write(model_yaml)
+		# serialize weights to HDF5
+		model.save_weights("modelregressor"+str(paramCounter)+".h5")
+		print("Successfully saved the model.")
 	
 	return lossarray
 	
@@ -380,7 +405,7 @@ def mainRNNRegressor(paramvector, dataGen):
 	
 		X_regressor,y_regressor = dataGen.constructSyntheticDataPredictions(syntheticDataset, shouldRNNUseZeroPadding, shouldRNNUseMiniBatch, batchSize)
 		
-		lossarray = testRNNRegressor(X_regressor, y_regressor, foldCount, shouldRNNUseMiniBatch);
+		lossarray = testRNNRegressor(X_regressor, y_regressor, foldCount, shouldRNNUseMiniBatch, plotcounter);
 		
 		avgrmse = sum(lossarray) / float(len(lossarray))
 		standiv = statistics.stdev(lossarray)
@@ -439,6 +464,8 @@ shouldRNNUseMiniBatch = True
 shouldRNNUseZeroPadding = False
 isClassifierEnabled = True
 isRegressorEnabled = False
+shouldShowGraph = True
+shouldSaveModel = False
 	
 if len(sys.argv) > 2:
 
@@ -454,6 +481,8 @@ if len(sys.argv) > 2:
 		shouldRNNUseZeroPadding = data['useZeroPadding']
 		isClassifierEnabled = data['classifierEnabled']
 		isRegressorEnabled = data['regressorEnabled']
+		shouldShowGraph = data['enableEpochGraph']
+		shouldSaveModel = data['saveModel']
 
 	#RNN params 
 	dataGenerator = SimulateData.DataGenerator(sys.argv[2])

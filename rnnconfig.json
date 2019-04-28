@@ -1,12 +1,14 @@
 {
-	"epochCount":50,
+	"epochCount":120,
 	"batchSize":128,
 	"hiddenUnitCount":32,
 	"trainingRatio":0.8,
-	"foldCount":100,
-	"useMiniBatch":true,
-	"useZeroPadding":false,
+	"foldCount":50,
+	"useMiniBatch":false,
+	"useZeroPadding":true,
 	"classifierEnabled":false,
-	"regressorEnabled":true
+	"regressorEnabled":true,
+	"enableEpochGraph":false,
+	"saveModel":true
 	
 }
