@@ -46,7 +46,7 @@ class DataGenerator:
 			myObject.majoritylineardisplacement = data['majoritylineardisplacement']
 			myObject.minoritylineardisplacement = data['minoritylineardisplacement']
 			
-			myObject.numLinearDataSingle = int(myObject.numLinearData / len(majoritylineardisplacement))
+			myObject.numLinearDataSingle = int(myObject.numLinearData / len(myObject.majoritylineardisplacement))
 			
 			myObject.expmajoritysteepness = data['expmajoritysteepness']
 			myObject.expminoritysteepness = data['expminoritysteepness']

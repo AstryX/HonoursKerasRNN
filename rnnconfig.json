@@ -6,9 +6,9 @@
 	"foldCount":50,
 	"useMiniBatch":false,
 	"useZeroPadding":true,
-	"classifierEnabled":false,
-	"regressorEnabled":true,
-	"enableEpochGraph":false,
-	"saveModel":true
+	"classifierEnabled":true,
+	"regressorEnabled":false,
+	"enableEpochGraph":true,
+	"saveModel":false
 	
 }

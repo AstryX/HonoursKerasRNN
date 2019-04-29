@@ -11,10 +11,10 @@
 	"hba1c_value":5,
 	"ubp_value":105,
 
-	"hdlconst":8,
-	"ldlconst":8,
-	"trigsconst":13,
-	"hba1cconst":0.4,
+	"hdlconst":5,
+	"ldlconst":15,
+	"trigsconst":19,
+	"hba1cconst":0.5,
 	"ubpconst":10.5,
 
 	"majorityelementrange":20,
