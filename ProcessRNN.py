@@ -48,9 +48,9 @@ class DynamicPlot(Callback):
 		if self.dataTitle2 != '':
 			self.metric2.append(history.get(self.dataTitle2))
 		
-		plt.plot(self.epoch, self.rmse, 'g', label = self.yLabel)
+		plt.plot(self.epoch, self.rmse, 'g-', label = self.yLabel)
 		if self.dataTitle2 != '':
-			plt.plot(self.epoch, self.metric2, 'r', label = self.yLabel2)
+			plt.plot(self.epoch, self.metric2, 'r--', label = self.yLabel2)
 			
 		if self.iterator == 1:
 			plt.legend()

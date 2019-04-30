@@ -1,0 +1,36 @@
+------------------------------------------
+Regression results for param nr:0
+------------------------------------------
+Parameter noise strength (HDL):2.000000
+Parameter offset:0.000000
+Parameter steepness:0.000000
+Number of folds:50
+------------------------------------------
+Elapsed time: 02:08:58
+Average Root Mean Squared Error:5.059004
+SD of RMSE:2.499976
+
+------------------------------------------
+Regression results for param nr:1
+------------------------------------------
+Parameter noise strength (HDL):4.000000
+Parameter offset:-0.450000
+Parameter steepness:0.030000
+Number of folds:50
+------------------------------------------
+Elapsed time: 02:51:12
+Average Root Mean Squared Error:6.270171
+SD of RMSE:0.964261
+
+------------------------------------------
+Regression results for param nr:2
+------------------------------------------
+Parameter noise strength (HDL):6.000000
+Parameter offset:-0.600000
+Parameter steepness:0.060000
+Number of folds:50
+------------------------------------------
+Elapsed time: 03:36:52
+Average Root Mean Squared Error:8.271703
+SD of RMSE:0.428957
+
